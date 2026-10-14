@@ -22,6 +22,8 @@ python3 evals/run_evals.py                # 17 checks
 | `captions.srt` / `captions.ass` | Large yellow outlined captions for the safe zone |
 | `report.json` | Lint checks, score, blockers |
 
+A pre-generated copy is committed in [examples/sample-output](examples/sample-output/ep01-baby-ceo/prompt.txt) so you can view the files on GitHub without running anything.
+
 plus `out/schedule.json` (daily slot, local and UTC) and `out/summary.json`.
 
 ## Daily workflow
