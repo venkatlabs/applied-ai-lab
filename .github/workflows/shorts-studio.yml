@@ -61,6 +61,8 @@ jobs:
       - name: Check secrets (names only, never values)
         run: |
           echo "GEMINI_API_KEY set: $([ -n "$GEMINI_API_KEY" ] && echo yes || echo no)"
+          K="$ANTHROPIC_API_KEY"
+          echo "ANTHROPIC_API_KEY set: $([ -n "$K" ] && echo yes || echo no), length ${#K}, starts with sk-ant-: $([ "${K#sk-ant-}" != "$K" ] && echo yes || echo no)"
           if [ "$EXECUTE" = "true" ] && [ -z "$GEMINI_API_KEY" ]; then
             echo "::error::execute is on but the GEMINI_API_KEY repository secret is empty or missing."; exit 1
           fi
