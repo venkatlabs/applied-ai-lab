@@ -158,6 +158,34 @@ def main():
         case("monthly spend accumulates for the cap check", sp.month_spend() == 2.0 and sp.data["spend_usd"] == 2.0)
     case("monthly cap is configured", channel["veo"]["max_budget_usd_per_month"] > 0)
 
+    import io
+    import os
+    import urllib.error
+    import urllib.request
+    from app import anthropic_api as api
+    good = "sk-ant-api03-" + "x" * 60
+    case("pasted key is cleaned (newline, spaces, quotes)", api.clean_key(f'  "{good}"\n') == good)
+    case("valid-looking key has no problem", api.key_problem(good) is None)
+    case("wrong-prefix key is flagged", "sk-ant-" in api.key_problem("AIzaSy" + "x" * 40))
+    case("empty key is flagged", "not set" in api.key_problem(""))
+    original = urllib.request.urlopen
+    def reject(request, timeout=0):
+        raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized", {},
+                                     io.BytesIO(b'{"error":{"message":"invalid x-api-key"}}'))
+    urllib.request.urlopen = reject
+    os.environ["ANTHROPIC_API_KEY"] = "bad-key"
+    try:
+        try:
+            api.post_messages({})
+            msg = ""
+        except api.AnthropicError as error:
+            msg = str(error)
+    finally:
+        urllib.request.urlopen = original
+        del os.environ["ANTHROPIC_API_KEY"]
+    case("401 gives an actionable message without leaking the key",
+         "rejected the key" in msg and "invalid x-api-key" in msg and "bad-key" not in msg, msg)
+
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
         if not passed and detail:

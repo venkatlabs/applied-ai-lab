@@ -7,7 +7,8 @@ the same scoring rules as the mock, so a bad model answer cannot ship silently.
 import json
 import os
 import re
-import urllib.request
+
+from .anthropic_api import AnthropicError, post_messages
 
 EMOJI_BY_TAG = {
     "#meetings": "🗓️",
@@ -89,9 +90,6 @@ class AnthropicCopywriter:
     )
 
     def write(self, channel, episode):
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise CopywriterError("ANTHROPIC_API_KEY is not set.")
         series = channel["series"]
         body = {
             "model": os.getenv("ANTHROPIC_MODEL", "claude-haiku-5-5"),
@@ -112,21 +110,10 @@ class AnthropicCopywriter:
                 }
             ],
         }
-        request = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=json.dumps(body).encode(),
-            headers={
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
         try:
-            with urllib.request.urlopen(request, timeout=60) as response:
-                payload = json.loads(response.read().decode())
-        except Exception as error:
-            raise CopywriterError(f"Anthropic request failed: {error}") from error
+            payload = post_messages(body)
+        except AnthropicError as error:
+            raise CopywriterError(str(error)) from error
         text = "".join(b.get("text", "") for b in payload.get("content", []) if b.get("type") == "text")
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if not match:
