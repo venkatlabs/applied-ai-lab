@@ -37,8 +37,24 @@
       "topic": "kansas city weather tornado warning"
     },
     "20261014-open-office-noise": {
-      "status": "planned",
-      "history": [],
+      "status": "pending_review",
+      "history": [
+        {
+          "status": "rendered",
+          "at": "2026-10-14T08:52:57+00:00",
+          "note": "~$1.2"
+        },
+        {
+          "status": "captioned",
+          "at": "2026-10-14T08:53:00+00:00",
+          "note": ""
+        },
+        {
+          "status": "pending_review",
+          "at": "2026-10-14T08:53:00+00:00",
+          "note": ""
+        }
+      ],
       "title": "When the open office gets loud 🙉",
       "episode": 4,
       "score": 96,
@@ -49,5 +65,8 @@
       "topic": "Open office noise"
     }
   },
-  "spend_usd": 0.0
+  "spend_usd": 1.2,
+  "spend_by_month": {
+    "2026-10": 1.2
+  }
 }
