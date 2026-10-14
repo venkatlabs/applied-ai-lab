@@ -73,7 +73,9 @@ def extract_json(text, expect):
 def complete_json(body, expect="object", timeout=60, attempts=2):
     """Call the model and return (parsed_json, payload). Retries once when the reply holds no usable JSON."""
     last = ""
-    for _ in range(attempts):
+    for attempt in range(attempts):
+        if attempt and "max_tokens" in last:  # ran out of tokens (thinking can eat the budget): give it room
+            body = {**body, "max_tokens": body["max_tokens"] * 2}
         payload = post_messages(body, timeout)
         text = "".join(b.get("text", "") for b in payload.get("content", []) if b.get("type") == "text")
         parsed = extract_json(text, expect)

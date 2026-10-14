@@ -93,7 +93,8 @@ class AnthropicCopywriter:
         series = channel["series"]
         body = {
             "model": os.getenv("ANTHROPIC_MODEL", "claude-haiku-5-5"),
-            "max_tokens": 1000,
+            "max_tokens": 4096,
+            "output_config": {"effort": "low"},  # Haiku 5.5 thinks by default; keep it short so the budget goes to the answer
             "cache_control": {"type": "ephemeral"},
             "system": self.STABLE_SYSTEM
             + f"\nSeries: {series['name']} — {series['tagline']} Audience: {series['audience']}.",
