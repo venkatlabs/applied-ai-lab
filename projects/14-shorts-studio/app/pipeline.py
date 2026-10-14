@@ -23,6 +23,20 @@ def plan_episode(channel, episode, copywriter, used_titles):
     return {"copy": copy, "prompt": prompt, "packs": packs, "report": report}
 
 
+def write_episode(out, channel, episode, plan):
+    folder = Path(out) / episode["id"]
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "prompt.txt").write_text(plan["prompt"] + "\n")
+    write_json(folder / "youtube.json", plan["packs"]["youtube"])
+    write_json(folder / "tiktok.json", plan["packs"]["tiktok"])
+    write_json(folder / "instagram.json", plan["packs"]["instagram"])
+    write_json(folder / "report.json", plan["report"])
+    seconds = min(int(episode.get("clip_seconds", channel["limits"]["clip_seconds_max"])),
+                  channel["limits"]["clip_seconds_max"])
+    write_caption_files(folder, episode["dialogue"], seconds)
+    return folder
+
+
 def run_plan(prompts_path, out_dir, channel_path=None, copywriter="mock", start=None, history=()):
     channel = load_channel(channel_path)
     episodes = load_episodes(prompts_path)
@@ -34,16 +48,7 @@ def run_plan(prompts_path, out_dir, channel_path=None, copywriter="mock", start=
     for episode in episodes:
         plan = plan_episode(channel, episode, writer, used_titles)
         used_titles.append(plan["copy"]["title"])
-        folder = out / episode["id"]
-        folder.mkdir(exist_ok=True)
-        (folder / "prompt.txt").write_text(plan["prompt"] + "\n")
-        write_json(folder / "youtube.json", plan["packs"]["youtube"])
-        write_json(folder / "tiktok.json", plan["packs"]["tiktok"])
-        write_json(folder / "instagram.json", plan["packs"]["instagram"])
-        write_json(folder / "report.json", plan["report"])
-        seconds = min(int(episode.get("clip_seconds", channel["limits"]["clip_seconds_max"])),
-                      channel["limits"]["clip_seconds_max"])
-        write_caption_files(folder, episode["dialogue"], seconds)
+        write_episode(out, channel, episode, plan)
         planned.append({"id": episode["id"], **plan})
 
     ready_ids = [p["id"] for p in planned if p["report"]["ready"]]

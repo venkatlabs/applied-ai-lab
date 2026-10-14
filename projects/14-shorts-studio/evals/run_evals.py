@@ -10,6 +10,11 @@ from app.config import load_channel, load_episodes
 from app.copywriter import MockCopywriter
 from app.pipeline import plan_episode
 from app.schedule import build_schedule
+from app import trends
+from app.captions import cues_from_speech
+from app.ideas import mock_ideas
+from app.state import State, StateError, estimate_cost
+import tempfile
 
 BASE = {
     "id": "t1", "scenario": "Bubbles glares at a laptop.", "dialogue": ["I need a nap."],
@@ -70,6 +75,51 @@ def main():
         titles.append(result["copy"]["title"])
         ready += result["report"]["ready"]
     case("shipped sample batch is fully publishable", ready == len(episodes), f"{ready}/{len(episodes)}")
+
+    rss = ('<rss xmlns:ht="https://trends.google.com/trending/rss"><channel>'
+           '<item><title>pumpkin spice latte</title><ht:approx_traffic>200,000+</ht:approx_traffic></item>'
+           '<item><title>earthquake hits city</title><ht:approx_traffic>500,000+</ht:approx_traffic></item>'
+           '<item><title>trump rally</title><ht:approx_traffic>900,000+</ht:approx_traffic></item>'
+           '</channel></rss>')
+    parsed = trends.google_trends(fetch=lambda url: rss)
+    case("google trends rss parses topics and traffic", len(parsed) == 3 and parsed[0]["score"] == 200000, parsed)
+    kept = trends.collect([parsed], limit=10)
+    case("tragedy and politics topics are filtered out", [t["topic"] for t in kept] == ["pumpkin spice latte"], kept)
+    yt = trends.youtube_popular("k", fetch=lambda url: '{"items":[{"snippet":{"title":"Cat video"}}]}')
+    case("youtube popular parses titles", yt[0]["topic"] == "Cat video")
+    seed = [{"topic": "Reply-all email chain", "source": "seed", "score": 1}]
+    case("used topics are not reused", trends.collect([seed], used=["reply-all email chain"]) == [])
+
+    topics = [{"topic": "Monday morning standup", "source": "seed", "score": 1},
+              {"topic": "Open office noise", "source": "seed", "score": 1}]
+    batch, titles, ok_count = mock_ideas(topics, 7), [], 0
+    for episode in batch:
+        result = plan_episode(channel, episode, MockCopywriter(), titles)
+        titles.append(result["copy"]["title"])
+        ok_count += result["report"]["ready"]
+    case("generated ideas pass the lint with distinct titles", ok_count == 2 and len(set(titles)) == 2, titles)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        state = State(tmp + "/state.json")
+        state.ensure("a")
+        try:
+            state.set_status("a", "approved")
+            case("cannot approve an unreviewed episode", False)
+        except StateError:
+            case("cannot approve an unreviewed episode", True)
+        state.set_status("a", "pending_review")
+        state.set_status("a", "approved")
+        state.save()
+        case("state persists across loads", State(tmp + "/state.json").with_status("approved") == ["a"])
+    try:
+        estimate_cost(8, None)
+        case("rendering is refused until a price is configured", False)
+    except StateError:
+        case("rendering is refused until a price is configured", True)
+    case("cost estimate is seconds x price", estimate_cost(8, 0.5) == 4.0)
+
+    two = cues_from_speech(["Per my last email: I need a nap."], [(1.4, 2.6), (4.1, 6.2)])
+    case("caption phrases map onto speech bursts", [c[2] for c in two] == ["Per my last email:", "I need a nap."], two)
 
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")

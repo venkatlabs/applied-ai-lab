@@ -4,6 +4,7 @@ Timing is estimated by spreading words evenly across the clip. Veo does not
 return word timestamps, so expect ~0.3s drift; use CapCut auto-captions when
 exact sync matters.
 """
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -81,3 +82,58 @@ def burn(folder, source="raw.mp4", output="final.mp4"):
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or "ffmpeg failed")
     return folder / output
+
+
+def speech_bursts(video, noise_db=-35, min_silence=0.25, merge_gap=0.6):
+    """Find spoken stretches from audio loudness (ffmpeg silencedetect). Returns [(start, end)]."""
+    result = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-i", str(video), "-af",
+         f"silencedetect=noise={noise_db}dB:d={min_silence}", "-vn", "-f", "null", "-"],
+        capture_output=True, text=True,
+    )
+    starts = [float(m) for m in re.findall(r"silence_start: ([\d.]+)", result.stderr)]
+    ends = [float(m) for m in re.findall(r"silence_end: ([\d.]+)", result.stderr)]
+    total = None
+    match = re.search(r"Duration: (\d+):(\d+):([\d.]+)", result.stderr)
+    if match:
+        h, m, sec = match.groups()
+        total = int(h) * 3600 + int(m) * 60 + float(sec)
+    # Speech = the gaps between silences.
+    silences = list(zip(sorted(starts), sorted(ends) + ([total] if len(ends) < len(starts) and total else [])))
+    bursts, cursor = [], 0.0
+    for sil_start, sil_end in silences:
+        if sil_start - cursor > 0.15:
+            bursts.append([cursor, sil_start])
+        cursor = sil_end
+    if total and total - cursor > 0.15:
+        bursts.append([cursor, total])
+    merged = []
+    for start, end in bursts:
+        if merged and start - merged[-1][1] < merge_gap:
+            merged[-1][1] = end
+        else:
+            merged.append([start, end])
+    return [(a, b) for a, b in merged]
+
+
+def cues_from_speech(dialogue, bursts):
+    """Spread the spoken words over the detected bursts, proportional to burst length."""
+    all_words = [w for line in dialogue for w in line.split()]
+    if not bursts or not all_words:
+        return None
+    phrases = [p.strip() for line in dialogue for p in re.findall(r"[^.:;,?!]+[.:;,?!]*", line) if p.strip()]
+    if len(phrases) == len(bursts):
+        return [(a, b, phrase) for (a, b), phrase in zip(bursts, phrases)]
+    total = sum(b - a for a, b in bursts)
+    cues, index = [], 0
+    for position, (start, end) in enumerate(bursts):
+        if position == len(bursts) - 1:
+            count = len(all_words) - index
+        else:
+            count = max(1, round(len(all_words) * (end - start) / total))
+            count = min(count, len(all_words) - index - (len(bursts) - position - 1))
+        chunk = all_words[index:index + count]
+        index += count
+        if chunk:
+            cues.append((start, end, " ".join(chunk)))
+    return cues

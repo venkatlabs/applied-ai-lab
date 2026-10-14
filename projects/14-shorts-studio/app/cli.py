@@ -3,11 +3,12 @@ import json
 import sys
 from pathlib import Path
 
-from . import pipeline
+from . import autopilot, pipeline, trends
 from .captions import burn
 from .config import ROOT, ConfigError, load_channel
 from .env_loader import load_dotenv
 from .publish_youtube import PublishError, upload
+from .state import StateError
 from .video_providers import VideoProviderError, get_video_provider
 
 
@@ -38,6 +39,31 @@ def parser():
     pub.add_argument("--out", default=str(ROOT / "out"))
     pub.add_argument("--only", nargs="*")
     pub.add_argument("--execute", action="store_true")
+
+    auto = sub.add_parser("autopilot", help="one cycle: trends -> ideas -> plan -> render -> captions -> review queue")
+    auto.add_argument("--out", default=str(ROOT / "out"))
+    auto.add_argument("--count", type=int, default=3)
+    auto.add_argument("--ideas", choices=["mock", "anthropic"], default="mock")
+    auto.add_argument("--copywriter", choices=["mock", "anthropic"], default="mock")
+    auto.add_argument("--live-trends", action="store_true", help="also pull Google Trends / YouTube popular")
+    auto.add_argument("--max-clips", type=int, default=1)
+    auto.add_argument("--execute", action="store_true", help="render with Veo (spends money)")
+
+    ing = sub.add_parser("ingest", help="caption clips you rendered by hand (out/<id>/raw.mp4) and queue them for review")
+    ing.add_argument("--out", default=str(ROOT / "out"))
+
+    sub.add_parser("trends", help="print today's safe trending topics").add_argument("--live", action="store_true")
+
+    rev = sub.add_parser("review", help="list episodes waiting for approval")
+    rev.add_argument("--out", default=str(ROOT / "out"))
+    for name in ("approve", "reject"):
+        cmd = sub.add_parser(name, help=f"{name} episodes by id")
+        cmd.add_argument("ids", nargs="+")
+        cmd.add_argument("--out", default=str(ROOT / "out"))
+
+    pa = sub.add_parser("publish-approved", help="upload approved episodes as private + scheduled")
+    pa.add_argument("--out", default=str(ROOT / "out"))
+    pa.add_argument("--execute", action="store_true")
     return p
 
 
@@ -91,7 +117,32 @@ def main(argv=None):
                     print(f"[dry-run] would upload {row['id']} as private, publishAt {slot}: {pack['title']}")
                 else:
                     print(f"uploaded {row['id']} -> https://youtu.be/{upload(folder, pack, slot)}")
-    except (ConfigError, VideoProviderError, PublishError, RuntimeError, FileNotFoundError) as error:
+        elif args.command == "autopilot":
+            autopilot.run_cycle(args.out, count=args.count, ideas=args.ideas, copywriter=args.copywriter,
+                                live_trends=args.live_trends, execute=args.execute, max_clips=args.max_clips)
+            print(f"\nNext: python3 -m app review --out {args.out}")
+        elif args.command == "ingest":
+            from .state import State
+            state = State(Path(args.out) / "state.json")
+            n = autopilot.ingest_manual_clips(state, args.out)
+            state.save()
+            print(f"{n} clip(s) queued for review." if n else "No planned episode has a raw.mp4 yet.")
+        elif args.command == "trends":
+            from .state import State
+            channel = load_channel()
+            for t in autopilot.gather_topics(channel, State(ROOT / "out" / "state.json"), 10, args.live):
+                print(f"{t['score']:>9}  {t['source']:<16} {t['topic']}")
+        elif args.command == "review":
+            queue = autopilot.review_queue(args.out)
+            for ep_id, info in queue:
+                print(f"{ep_id}  score {info['score']}  \"{info['title']}\"\n    watch: {args.out}/{ep_id}/final.mp4")
+            print(f"\n{len(queue)} waiting. python3 -m app approve <id> | reject <id>")
+        elif args.command in ("approve", "reject"):
+            autopilot.decide(args.out, args.ids, args.command == "approve")
+            print(("approved: " if args.command == "approve" else "rejected: ") + ", ".join(args.ids))
+        elif args.command == "publish-approved":
+            autopilot.publish_approved(args.out, upload, args.execute)
+    except (StateError, ConfigError, VideoProviderError, PublishError, RuntimeError, FileNotFoundError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     return 0
