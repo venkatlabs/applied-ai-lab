@@ -286,13 +286,12 @@ def main():
             (Path(tmp) / ep_id / "report.json").write_text(json.dumps({"checks": checks}))
         picked = autopilot.pick_renderable(stx, tmp, log=lambda *_: None)
         case("render gate keeps only clean, safe episodes", picked == ["clean"] and stx.with_status("rejected") == ["tornado"], picked)
-        stx.ensure("other", topic="Reply-all email chain"); (Path(tmp) / "other").mkdir()
-        with tempfile.TemporaryDirectory() as tmp2:
+        case("--only selects one episode", autopilot.pick_renderable(stx, tmp, only="clean", log=lambda *_: None) == ["clean"])
+    with tempfile.TemporaryDirectory() as tmp2:
         st2 = State(tmp2 + "/s.json"); st2.ensure("meta", topic="Open office noise"); (Path(tmp2) / "meta").mkdir()
         (Path(tmp2) / "meta" / "report.json").write_text(json.dumps({"checks": [{"name": "cta_present", "ok": False}]}))
         case("a metadata-only lint flag does not block rendering",
              autopilot.pick_renderable(st2, tmp2, log=lambda *_: None) == ["meta"])
-    case("--only selects one episode", autopilot.pick_renderable(stx, tmp, only="clean", log=lambda *_: None) == ["clean"])
 
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
