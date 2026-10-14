@@ -20,6 +20,9 @@ UNSAFE = (
     "dead", "death", "dies", "killed", "shooting", "attack", "war", "crash", "earthquake",
     "hurricane", "arrest", "trial", "lawsuit", "election", "trump", "biden", "harris",
     "covid", "outbreak", "cancer", "suicide", "missing", "abuse", "israel", "gaza", "ukraine",
+    "tornado", "tornadoes", "storm", "storms", "flood", "flooding", "wildfire", "fire", "tsunami", "blizzard",
+    "evacuation", "evacuate", "explosion", "shooter", "victim", "victims", "funeral", "hostage", "terror",
+    "weather", "forecast", "warning", "emergency", "disaster", "injured", "fatal",
 )
 
 

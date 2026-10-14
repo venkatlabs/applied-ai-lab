@@ -68,8 +68,36 @@ def ingest_manual_clips(state, out, log=print):
     return count
 
 
+# Lint checks that decide whether the VIDEO is worth paying for (metadata-only flags, like the CTA, don't).
+RENDER_CHECKS = {"scene_has_no_on_screen_text", "character_pronoun_matches", "dialogue_fits_clip",
+                 "character_block_verbatim", "no_review_terms", "opening_line_is_quick"}
+
+
+def pick_renderable(state, out, only=None, log=print):
+    """Planned episodes worth paying to render. Rejects unsafe topics; skips episodes whose lint has any failure."""
+    chosen = []
+    for ep_id in state.with_status("planned"):
+        if only and ep_id != only:
+            continue
+        info = state.data["episodes"][ep_id]
+        if not trends.is_safe(info.get("topic", "")):
+            state.set_status(ep_id, "rejected", "unsafe topic")
+            log(f"  rejected {ep_id}: topic is not safe to joke about")
+            continue
+        report_path = Path(out) / ep_id / "report.json"
+        failed = []
+        if report_path.exists():
+            failed = [c["name"] for c in json.loads(report_path.read_text())["checks"]
+                      if not c["ok"] and c["name"] in RENDER_CHECKS]
+        if failed:
+            log(f"  skipped  {ep_id}: lint flags {failed}; not worth paying to render")
+            continue
+        chosen.append(ep_id)
+    return chosen
+
+
 def run_cycle(out, channel_path=None, count=3, ideas="mock", copywriter="mock",
-              live_trends=False, execute=False, max_clips=1, provider="veo", log=print):
+              live_trends=False, execute=False, max_clips=1, provider="veo", only=None, log=print):
     channel = load_channel(channel_path)
     out = Path(out)
     state = State(out / "state.json")
@@ -99,14 +127,14 @@ def run_cycle(out, channel_path=None, count=3, ideas="mock", copywriter="mock",
         log("No new safe topics found.")
 
     try:
-        _render_or_report(state, out, channel, execute, max_clips, provider, log)
+        _render_or_report(state, out, channel, execute, max_clips, provider, only, log)
     finally:
         state.save()
     return state
 
 
-def _render_or_report(state, out, channel, execute, max_clips, provider, log):
-    pending = state.with_status("planned")
+def _render_or_report(state, out, channel, execute, max_clips, provider, only, log):
+    pending = pick_renderable(state, out, only, log)
     if pending and not execute:
         log(f"\n{len(pending)} planned. Render each prompt.txt in Flow, save as out/<id>/raw.mp4, then run autopilot again "
             "(or `ingest`). Or add --execute to render with Veo (spends money).")
@@ -114,7 +142,7 @@ def _render_or_report(state, out, channel, execute, max_clips, provider, log):
         renderer = get_video_provider(provider, channel)
         price, budget = channel["veo"]["price_per_second_usd"], channel["veo"]["max_budget_usd_per_run"]
         spent = 0.0
-        for ep_id in pending[:max_clips]:
+        for ep_id in (pending[:max_clips]):
             info = state.data["episodes"][ep_id]
             cost = estimate_cost(info["seconds"], price)
             if spent + cost > budget:

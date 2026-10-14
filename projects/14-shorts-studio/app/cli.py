@@ -48,6 +48,7 @@ def parser():
     auto.add_argument("--live-trends", action="store_true", help="also pull Google Trends / YouTube popular")
     auto.add_argument("--max-clips", type=int, default=1)
     auto.add_argument("--execute", action="store_true", help="render with Veo (spends money)")
+    auto.add_argument("--only", help="render only this episode id (default: oldest clean planned episode)")
 
     ing = sub.add_parser("ingest", help="caption clips you rendered by hand (out/<id>/raw.mp4) and queue them for review")
     ing.add_argument("--out", default=str(ROOT / "out"))
@@ -122,7 +123,8 @@ def main(argv=None):
                     print(f"uploaded {row['id']} -> https://youtu.be/{upload(folder, pack, slot)}")
         elif args.command == "autopilot":
             autopilot.run_cycle(args.out, count=args.count, ideas=args.ideas, copywriter=args.copywriter,
-                                live_trends=args.live_trends, execute=args.execute, max_clips=args.max_clips)
+                                live_trends=args.live_trends, execute=args.execute, max_clips=args.max_clips,
+                                only=args.only)
             print(f"\nNext: python3 -m app review --out {args.out}")
         elif args.command == "report":
             print(autopilot.markdown_report(args.out, args.repo))
