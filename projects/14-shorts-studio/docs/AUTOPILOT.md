@@ -57,3 +57,12 @@ Fully unattended, trend-chasing, AI-generated daily uploads are the pattern YouT
 - Plan-only is the default; rendering needs `--execute`, a configured price, and stays under `max_budget_usd_per_run`.
 - `--max-clips` caps renders per cycle (default 1).
 - Spend is accumulated in `out/state.json` (`spend_usd`). Set a billing alert in Google Cloud too; the ledger is an estimate.
+
+## Is the full automation worth building out? (decision gate)
+
+The API key and unattended rendering only save clicking time: rendering one clip by hand in Flow takes about ten minutes. Automation pays off only if the content itself works. Decide with data, not enthusiasm:
+
+1. Publish 5-10 episodes by hand-rendering (free to the pipeline).
+2. After about 7 days, look at each in YouTube Studio: **Viewed vs. swiped away**, average view duration, replays, and subscribers gained.
+3. Go for the Gemini API and a weekly cron only if **both** hold: (a) at least one format keeps over ~70% of viewers, and (b) views per episode are flat or rising, not falling. If not, fix the concept first; automation just makes more of what is not working.
+4. Then create `GEMINI_API_KEY`, set `veo.price_per_second_usd`, and test one clip with `--execute --max-clips 1`.
