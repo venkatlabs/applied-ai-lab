@@ -1,0 +1,11 @@
+# Evergreen seed topics. Used when live trend sources are off or unreachable.
+Monday morning standup
+Reply-all email chain
+Open office noise
+Performance review season
+Return to office mandate
+Quarterly budget freeze
+Friday 4:59 PM meeting invite
+Expense report deadline
+Team building offsite
+Slack notification overload

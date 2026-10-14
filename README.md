@@ -54,6 +54,7 @@ applied-ai-lab/
 | 11 | Voice Journal Memory Coach | speech, memory, reflection loops | planned |
 | 12 | Agent Reliability Dashboard | observability, traces, regression testing | planned |
 | 13 | Equity Research Lab | source-grounded financial research, provider abstraction, immutable prediction snapshots, retrospective evals | MVP |
+| 14 | Shorts Studio | text-to-video prompts, per-platform metadata, publish-readiness lint, scheduling | local MVP |
 
 ## Weekend Workflow
 
@@ -99,3 +100,13 @@ npm run dev
 ```
 
 Equity Research Lab runs in demo mode without API keys and is designed to add SEC, analyst, options, persistence, and retrospective-evaluation providers incrementally. See the [Project 13 README](projects/13-equity-research-lab/README.md).
+
+## Project 14
+
+```bash
+cd projects/14-shorts-studio
+python3 -m app plan
+python3 evals/run_evals.py
+```
+
+Shorts Studio turns episode prompts into Veo prompts, YouTube/TikTok/Instagram metadata, captions and a posting schedule, with no API keys needed. See the [Project 14 README](projects/14-shorts-studio/README.md).

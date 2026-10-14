@@ -1,0 +1,55 @@
+{
+  "channel": {
+    "handle": "@social-guru",
+    "url": "https://www.youtube.com/@social-guru",
+    "timezone": "America/New_York",
+    "post_times": [
+      "17:30"
+    ],
+    "videos_per_day": 1
+  },
+  "series": {
+    "name": "Bubbles the Baby CEO",
+    "tagline": "A baby. A boardroom. Zero patience for meetings.",
+    "cta": "Follow for a new episode every day.",
+    "audience": "adults",
+    "character": {
+      "name": "Bubbles",
+      "block": "Bubbles — a chubby-cheeked 18-month-old baby boy, curly black hair, big brown eyes, wearing a tiny navy blazer over a white onesie.",
+      "voice": "a small, deadpan baby voice with confident executive cadence"
+    },
+    "default_hashtags": [
+      "#Shorts",
+      "#CorporateHumor",
+      "#FunnyBabies"
+    ],
+    "style": "photorealistic, cinematic lighting, shallow depth of field, comedic deadpan tone"
+  },
+  "limits": {
+    "title_max_chars": 50,
+    "clip_seconds_max": 8,
+    "words_per_second": 2.5,
+    "youtube_hashtags": [
+      3,
+      5
+    ],
+    "short_form_hashtags": [
+      3,
+      5
+    ]
+  },
+  "disclosure": {
+    "ai_generated": true
+  },
+  "veo": {
+    "model": "veo-3.1-fast-generate-preview",
+    "price_per_second_usd": 0.15,
+    "price_note": "Conservative estimate from third-party sources (Fast ~$0.10-0.15/s, Standard ~$0.40/s). Verify on Google's Gemini API pricing page and edit.",
+    "max_budget_usd_per_run": 3.0,
+    "max_budget_usd_per_month": 30.0
+  },
+  "trends": {
+    "geo": "US",
+    "seed_file": "topics.txt"
+  }
+}

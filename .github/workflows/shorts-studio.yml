@@ -1,0 +1,111 @@
+name: shorts-studio
+# Plans trend-based Shorts episodes, optionally renders them with Veo, captions them,
+# and stores everything on the `studio-data` branch for you to review and upload.
+# Rendering spends real money (Gemini API); it only happens when `execute` is ticked.
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Episodes to plan"
+        default: "1"
+      max_clips:
+        description: "Max clips to render this run"
+        default: "1"
+      execute:
+        description: "Render with Veo (spends money)"
+        type: boolean
+        default: false
+      ideas:
+        description: "Idea writer (anthropic needs ANTHROPIC_API_KEY secret)"
+        type: choice
+        options: [mock, anthropic]
+        default: mock
+      live_trends:
+        description: "Also pull Google Trends / YouTube popular"
+        type: boolean
+        default: false
+  # Uncomment ONE cron line once a manual run works. Scheduled runs only render if the repo VARIABLE
+  # SHORTS_EXECUTE is set to "true" (Settings > Secrets and variables > Actions > Variables); otherwise they
+  # plan only. Spend is also capped by veo.max_budget_usd_per_run and max_budget_usd_per_month in channel.json.
+  # schedule:
+  #   - cron: "0 13 * * 1"          # weekly, Mondays
+  #   - cron: "0 13 * * 1,3,5"      # three times a week
+  #   - cron: "0 13 * * *"          # daily
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shorts-studio
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: projects/14-shorts-studio
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide whether this run may spend money
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then EXEC="${{ vars.SHORTS_EXECUTE }}"; else EXEC="${{ inputs.execute }}"; fi
+          echo "EXECUTE=$EXEC" >> "$GITHUB_ENV"
+
+      - name: Check secrets (names only, never values)
+        run: |
+          echo "GEMINI_API_KEY set: $([ -n "$GEMINI_API_KEY" ] && echo yes || echo no)"
+          if [ "$EXECUTE" = "true" ] && [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::execute is on but the GEMINI_API_KEY repository secret is empty or missing."; exit 1
+          fi
+
+      - name: Load state from the studio-data branch
+        run: |
+          git config user.name "shorts-studio[bot]"
+          git config user.email "shorts-studio@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin studio-data >/dev/null 2>&1; then
+            git fetch origin studio-data
+            git worktree add -B studio-data out FETCH_HEAD
+          else
+            git worktree add --orphan -b studio-data out
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install google-genai
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Run one cycle
+        run: |
+          ARGS="--count ${{ inputs.count || '1' }} --max-clips ${{ inputs.max_clips || '1' }} --ideas ${{ inputs.ideas || 'mock' }}"
+          [ "${{ inputs.ideas }}" = "anthropic" ] && ARGS="$ARGS --copywriter anthropic"
+          [ "${{ inputs.live_trends }}" = "true" ] && ARGS="$ARGS --live-trends"
+          [ "$EXECUTE" = "true" ] && ARGS="$ARGS --execute"
+          python3 -m app autopilot $ARGS
+
+      - name: Save state to the studio-data branch
+        working-directory: projects/14-shorts-studio/out
+        run: |
+          git add -A
+          git diff --cached --quiet && echo "Nothing new to save." || git commit -m "shorts-studio: cycle $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push origin studio-data
+
+      - name: Summary
+        run: python3 -m app report --repo "${{ github.repository }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: episodes
+          path: |
+            projects/14-shorts-studio/out/**/final.mp4
+            projects/14-shorts-studio/out/**/prompt.txt
+            projects/14-shorts-studio/out/**/youtube.json
+          if-no-files-found: ignore
+          retention-days: 30

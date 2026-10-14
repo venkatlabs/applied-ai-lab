@@ -17,6 +17,7 @@ Each project is designed for a 3-6 hour first version. Later weekends can add po
 | 11 | Voice Journal Memory Coach | Record or paste reflections and receive themes, goals, and follow-up prompts. | Speech/text pipeline, memory, personalization | Human-centered AI product signal. | Text-first version, memory JSON file, weekly summary. |
 | 12 | Agent Reliability Dashboard | Track prompts, model responses, latency, failures, eval scores, and regressions across lab projects. | Observability, traces, reliability engineering | Excellent senior-engineering signal. | Local JSONL logs, dashboard, eval trend chart. |
 | 13 | Equity Research Lab | Research any public ticker, preserve the thesis, and grade predictions against realized returns. | Source-grounded agents, provider abstraction, financial data, evals, immutable snapshots | Demonstrates applied AI + finance product thinking and self-evaluating research workflows. | Demo-mode Next.js portal, SEC/analyst adapters, 12-factor scorecard, archive, retrospective grading. |
+| 14 | Shorts Studio | Prompts in, publish-ready AI Shorts out: Veo prompts, platform metadata, captions, schedule. | Text-to-video prompting, structured copy, deterministic quality gates, human-in-the-loop publishing | Shows applied AI + content-ops product thinking. | Mock-mode planner, lint, captions, dry-run publish; Veo and YouTube adapters opt-in. |
 
 ## Suggested Order
 
