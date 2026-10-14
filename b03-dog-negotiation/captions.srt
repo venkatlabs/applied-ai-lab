@@ -1,0 +1,11 @@
+1
+00:00:00,400 --> 00:00:06,833
+That is my toy. Return it.
+
+2
+00:00:06,833 --> 00:00:10,050
+Pleasure doing business.
+
+3
+00:00:10,050 --> 00:00:19,700
+Negotiations like this are why he runs the house.

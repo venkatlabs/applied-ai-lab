@@ -25,8 +25,14 @@
       "topic": "Reply-all email chain"
     },
     "20261014-kansas-city-weather-tornado": {
-      "status": "planned",
-      "history": [],
+      "status": "rejected",
+      "history": [
+        {
+          "status": "rejected",
+          "at": "2026-10-14T09:39:44+00:00",
+          "note": "unsafe topic"
+        }
+      ],
       "title": "Bubbles Handles the Storm Personally ⛈️",
       "episode": 3,
       "score": 96,
@@ -63,6 +69,126 @@
       ],
       "seconds": 8,
       "topic": "Open office noise"
+    },
+    "b01-nap-negotiation": {
+      "status": "planned",
+      "history": [],
+      "title": "Not now. Meetings. 😂",
+      "episode": 5,
+      "score": 100,
+      "dialogue": [
+        "Absolutely not. I have meetings.",
+        "Circle back after my nap.",
+        "Meeting adjourned. Productivity peaked at three oh two."
+      ],
+      "shots": [
+        {
+          "scenario": "Bubbles sits upright in his crib at 3 PM, arms crossed, glaring into the camera while an adult hand reaches in to pull the curtain closed.",
+          "dialogue": [
+            "Absolutely not. I have meetings."
+          ],
+          "delivery": "spoken",
+          "seconds": 6
+        },
+        {
+          "scenario": "Bubbles drags a toy laptop onto the crib rail, taps it hard with two fingers, then yawns mid-tap and blinks slowly at the camera.",
+          "dialogue": [
+            "Circle back after my nap."
+          ],
+          "delivery": "spoken",
+          "seconds": 6
+        },
+        {
+          "scenario": "Bubbles collapses face first onto the pillow, instantly asleep, one hand still resting on the open toy laptop.",
+          "dialogue": [
+            "Meeting adjourned. Productivity peaked at three oh two."
+          ],
+          "delivery": "voiceover",
+          "seconds": 8
+        }
+      ],
+      "seconds": 20,
+      "topic": "Not now. Meetings."
+    },
+    "b02-grocery-heist": {
+      "status": "planned",
+      "history": [],
+      "title": "Phase one: distraction 😂",
+      "episode": 6,
+      "score": 100,
+      "dialogue": [
+        "Phase one: distraction. Mom is reading ingredients.",
+        "Phase two: conceal. Say nothing. Look adorable.",
+        "I regret nothing."
+      ],
+      "shots": [
+        {
+          "scenario": "Bubbles sits in a shopping cart seat and grabs a cookie box off a low shelf as the cart rolls past, while the adult pushing it reads a label with their face turned away.",
+          "dialogue": [
+            "Phase one: distraction. Mom is reading ingredients."
+          ],
+          "delivery": "voiceover",
+          "seconds": 8
+        },
+        {
+          "scenario": "Bubbles tucks the cookie box under his blanket, eyes darting left, then right, face perfectly innocent.",
+          "dialogue": [
+            "Phase two: conceal. Say nothing. Look adorable."
+          ],
+          "delivery": "voiceover",
+          "seconds": 8
+        },
+        {
+          "scenario": "At a checkout belt Bubbles stares straight into the camera with the cookie box in plain view in front of him.",
+          "dialogue": [
+            "I regret nothing."
+          ],
+          "delivery": "spoken",
+          "seconds": 6
+        }
+      ],
+      "seconds": 22,
+      "topic": "Phase one: distraction"
+    },
+    "b03-dog-negotiation": {
+      "status": "planned",
+      "history": [],
+      "title": "That is my toy 😂",
+      "episode": 7,
+      "score": 100,
+      "dialogue": [
+        "That is my toy. Return it.",
+        "Pleasure doing business.",
+        "Negotiations like this are why he runs the house."
+      ],
+      "shots": [
+        {
+          "scenario": "Bubbles sits on a living room floor pointing at a golden retriever lying nearby chewing a baby toy, then looks into the camera, deadpan.",
+          "dialogue": [
+            "That is my toy. Return it."
+          ],
+          "delivery": "spoken",
+          "seconds": 6
+        },
+        {
+          "scenario": "The dog slowly nudges the toy across the floor toward Bubbles with its nose; Bubbles picks it up and nods once, facing the camera.",
+          "dialogue": [
+            "Pleasure doing business."
+          ],
+          "delivery": "spoken",
+          "seconds": 6
+        },
+        {
+          "scenario": "Bubbles hands the dog a tiny cracker, which it catches gently, then the dog rests its head on his knee.",
+          "dialogue": [
+            "Negotiations like this are why he runs the house."
+          ],
+          "delivery": "voiceover",
+          "seconds": 8
+        }
+      ],
+      "seconds": 20,
+      "topic": "That is my toy"
     }
   },
   "spend_usd": 1.2,

@@ -1,0 +1,119 @@
+{
+  "score": 100,
+  "ready": true,
+  "blockers": [],
+  "checks": [
+    {
+      "name": "title_length",
+      "ok": true,
+      "detail": "16 chars (max 50)",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "name": "title_unique",
+      "ok": true,
+      "detail": "title already used in this batch or channel history",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "name": "hook_text_short",
+      "ok": true,
+      "detail": "4 words (max 6)",
+      "weight": 1,
+      "blocking": false
+    },
+    {
+      "name": "opening_line_is_quick",
+      "ok": true,
+      "detail": "first line is 6 words; viewers decide in ~2s",
+      "weight": 2,
+      "blocking": false
+    },
+    {
+      "name": "dialogue_fits_clip",
+      "ok": true,
+      "detail": "ok",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "name": "character_block_verbatim",
+      "ok": true,
+      "detail": "character block must appear word-for-word in every shot's Veo prompt",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "name": "shots_have_camera_facing",
+      "ok": true,
+      "detail": "spoken shots [] never say Bubbles looks into the camera (lip-sync needs a face to lens)",
+      "weight": 2,
+      "blocking": false
+    },
+    {
+      "name": "mouth_visible",
+      "ok": true,
+      "detail": "spoken shots [] hide his face or mouth; use a voiceover shot instead",
+      "weight": 2,
+      "blocking": false
+    },
+    {
+      "name": "episode_length",
+      "ok": true,
+      "detail": "20s total; target 15s or more",
+      "weight": 1,
+      "blocking": false
+    },
+    {
+      "name": "shorts_tag",
+      "ok": true,
+      "detail": "#Shorts missing from description",
+      "weight": 2,
+      "blocking": false
+    },
+    {
+      "name": "hashtag_count",
+      "ok": true,
+      "detail": "5 hashtags",
+      "weight": 1,
+      "blocking": false
+    },
+    {
+      "name": "cta_present",
+      "ok": true,
+      "detail": "description lacks the follow CTA",
+      "weight": 1,
+      "blocking": false
+    },
+    {
+      "name": "ai_disclosure_set",
+      "ok": true,
+      "detail": "AI labels must be on for YouTube, TikTok and Instagram",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "name": "scene_has_no_on_screen_text",
+      "ok": true,
+      "detail": "scene quotes on-screen text; Veo is told to render none, so drop it",
+      "weight": 1,
+      "blocking": false
+    },
+    {
+      "name": "character_pronoun_matches",
+      "ok": true,
+      "detail": "Bubbles is a boy; scene uses she/her",
+      "weight": 1,
+      "blocking": false
+    },
+    {
+      "name": "no_review_terms",
+      "ok": true,
+      "detail": "ok",
+      "weight": 3,
+      "blocking": true
+    }
+  ]
+}
