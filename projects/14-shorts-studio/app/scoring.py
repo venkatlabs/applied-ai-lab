@@ -32,6 +32,7 @@ def lint_episode(channel, episode, copy, packs, prompt, existing_titles=()):
     haystack = " ".join([title, copy["description"], episode["scenario"], " ".join(episode["dialogue"])]).lower()
     flagged = [term for term in REVIEW_TERMS if term in haystack]
 
+    scenario = episode["scenario"]
     checks = [
         check("title_length", 10 <= len(title) <= limits["title_max_chars"],
               f"{len(title)} chars (max {limits['title_max_chars']})", 2, True),
@@ -53,6 +54,10 @@ def lint_episode(channel, episode, copy, packs, prompt, existing_titles=()):
         check("ai_disclosure_set", packs["youtube"]["containsSyntheticMedia"] == channel["disclosure"]["ai_generated"]
               and packs["tiktok"]["ai_generated_content_label"] and packs["instagram"]["ai_label"],
               "AI labels must be on for YouTube, TikTok and Instagram", 3, True),
+        check("scene_has_no_on_screen_text", not re.search(r"['\"“‘][^'\"”’]{3,}['\"”’]", scenario),
+              "scene quotes on-screen text; Veo is told to render none, so drop it", 1),
+        check("character_pronoun_matches", not re.search(r"\b(she|her|hers)\b", scenario, re.I),
+              "Bubbles is a boy; scene uses she/her", 1),
         check("no_review_terms", not flagged,
               f"needs a human look: {', '.join(flagged)}" if flagged else "ok", 3, True),
     ]

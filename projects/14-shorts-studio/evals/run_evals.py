@@ -186,6 +186,30 @@ def main():
     case("401 gives an actionable message without leaking the key",
          "rejected the key" in msg and "invalid x-api-key" in msg and "bad-key" not in msg, msg)
 
+    fenced = 'Sure! ```json\n{"title": "a", "n": {"x": 1}}\n``` hope that helps {not json}'
+    case("JSON is found inside fences and prose", api.extract_json(fenced, "object") == {"title": "a", "n": {"x": 1}})
+    case("array is found among prose", api.extract_json("Here: [1, 2] done", "array") == [1, 2])
+    case("no JSON gives None", api.extract_json("I cannot help with that.", "object") is None)
+    replies = iter(["I'd be happy to help!", '{"title": "ok"}'])
+    original_post = api.post_messages
+    api.post_messages = lambda body, timeout=60: {"content": [{"type": "text", "text": next(replies)}], "stop_reason": "end_turn"}
+    try:
+        parsed, _ = api.complete_json({}, "object")
+        case("a bad reply is retried once and recovers", parsed == {"title": "ok"})
+        api.post_messages = lambda body, timeout=60: {"content": [{"type": "text", "text": "No."}], "stop_reason": "refusal"}
+        try:
+            api.complete_json({}, "object")
+            msg2 = ""
+        except api.AnthropicError as error:
+            msg2 = str(error)
+        case("persistent bad replies fail loudly with context", "refusal" in msg2 and "No." in msg2, msg2)
+    finally:
+        api.post_messages = original_post
+    bad_scene = plan(channel, scenario="She presses a key and the screen flashes 'Reply All: Unsubscribed'.")
+    flagged = {c["name"] for c in bad_scene["report"]["checks"] if not c["ok"]}
+    case("scene with on-screen text and wrong pronoun is flagged",
+         {"scene_has_no_on_screen_text", "character_pronoun_matches"} <= flagged, flagged)
+
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
         if not passed and detail:
