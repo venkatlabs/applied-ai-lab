@@ -1,0 +1,46 @@
+{
+  "timing": "words",
+  "window": [
+    0.0,
+    4.5
+  ],
+  "words": [
+    {
+      "word": "Absolutely",
+      "start": 0.0,
+      "end": 2.08
+    },
+    {
+      "word": "not.",
+      "start": 2.08,
+      "end": 2.86
+    },
+    {
+      "word": "I",
+      "start": 3.64,
+      "end": 3.94
+    },
+    {
+      "word": "have",
+      "start": 3.94,
+      "end": 4.18
+    },
+    {
+      "word": "meetings.",
+      "start": 4.18,
+      "end": 4.5
+    }
+  ],
+  "cues": [
+    [
+      0.0,
+      2.86,
+      "Absolutely not."
+    ],
+    [
+      3.64,
+      4.5,
+      "I have meetings."
+    ]
+  ]
+}

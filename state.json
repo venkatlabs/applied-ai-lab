@@ -71,8 +71,24 @@
       "topic": "Open office noise"
     },
     "b01-nap-negotiation": {
-      "status": "planned",
-      "history": [],
+      "status": "pending_review",
+      "history": [
+        {
+          "status": "rendered",
+          "at": "2026-10-14T15:01:53+00:00",
+          "note": "~$3.0"
+        },
+        {
+          "status": "captioned",
+          "at": "2026-10-14T15:02:04+00:00",
+          "note": ""
+        },
+        {
+          "status": "pending_review",
+          "at": "2026-10-14T15:02:04+00:00",
+          "note": ""
+        }
+      ],
       "title": "Not now. Meetings. 😂",
       "episode": 5,
       "score": 100,
@@ -191,8 +207,8 @@
       "topic": "That is my toy"
     }
   },
-  "spend_usd": 1.2,
+  "spend_usd": 4.2,
   "spend_by_month": {
-    "2026-10": 1.2
+    "2026-10": 4.2
   }
 }

@@ -1,0 +1,41 @@
+{
+  "timing": "words",
+  "window": [
+    2.72,
+    4.58
+  ],
+  "words": [
+    {
+      "word": "Circle",
+      "start": 2.72,
+      "end": 3.44
+    },
+    {
+      "word": "back",
+      "start": 3.44,
+      "end": 3.78
+    },
+    {
+      "word": "after",
+      "start": 3.78,
+      "end": 4.16
+    },
+    {
+      "word": "my",
+      "start": 4.16,
+      "end": 4.34
+    },
+    {
+      "word": "nap.",
+      "start": 4.34,
+      "end": 4.58
+    }
+  ],
+  "cues": [
+    [
+      2.72,
+      4.58,
+      "Circle back after my nap."
+    ]
+  ]
+}

@@ -1,11 +1,19 @@
 1
-00:00:00,400 --> 00:00:05,761
-Absolutely not. I have meetings.
+00:00:00,000 --> 00:00:02,860
+Absolutely not.
 
 2
-00:00:05,761 --> 00:00:11,122
-Circle back after my nap.
+00:00:03,640 --> 00:00:04,500
+I have meetings.
 
 3
-00:00:11,122 --> 00:00:19,700
-Meeting adjourned. Productivity peaked at three oh two.
+00:00:06,428 --> 00:00:08,288
+Circle back after my nap.
+
+4
+00:00:09,000 --> 00:00:12,240
+Meeting adjourned.
+
+5
+00:00:13,000 --> 00:00:14,440
+Productivity peaked at three oh two.

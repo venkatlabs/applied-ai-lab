@@ -1,0 +1,51 @@
+{
+  "timing": "words",
+  "window": [
+    0.0,
+    5.84
+  ],
+  "words": [
+    {
+      "word": "Meeting",
+      "start": 0.0,
+      "end": 2.44
+    },
+    {
+      "word": "adjourned.",
+      "start": 2.44,
+      "end": 3.24
+    },
+    {
+      "word": "Productivity",
+      "start": 4.0,
+      "end": 4.62
+    },
+    {
+      "word": "peaked",
+      "start": 4.62,
+      "end": 5.12
+    },
+    {
+      "word": "at",
+      "start": 5.12,
+      "end": 5.44
+    },
+    {
+      "word": "302.",
+      "start": 5.44,
+      "end": 5.84
+    }
+  ],
+  "cues": [
+    [
+      0.0,
+      3.24,
+      "Meeting adjourned."
+    ],
+    [
+      4.0,
+      5.44,
+      "Productivity peaked at three oh two."
+    ]
+  ]
+}
