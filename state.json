@@ -11,6 +11,18 @@
       ],
       "seconds": 8,
       "topic": "Monday morning standup"
+    },
+    "20261014-reply-all-email-chain": {
+      "status": "planned",
+      "history": [],
+      "title": "Baby CEO Ends Reply-All Chaos 👶",
+      "episode": 2,
+      "score": 96,
+      "dialogue": [
+        "Thank you, Gary. Now nobody has to say 'thanks, all.'"
+      ],
+      "seconds": 8,
+      "topic": "Reply-all email chain"
     }
   },
   "spend_usd": 0.0
