@@ -59,7 +59,8 @@ def anthropic_ideas(channel, topics, start_number, today=None):
     )
     body = {
         "model": os.getenv("ANTHROPIC_MODEL", "claude-haiku-5-5"),
-        "max_tokens": 400 * max(len(topics), 1),
+        "max_tokens": 1500 * max(len(topics), 1),
+        "output_config": {"effort": "low"},  # Haiku 5.5 thinks by default; keep it short so the budget goes to the answer
         "cache_control": {"type": "ephemeral"},
         "system": system,
         "messages": [{"role": "user", "content": json.dumps([t["topic"] for t in topics])}],

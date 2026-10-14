@@ -232,6 +232,33 @@ def main():
         api.post_messages = original_post
         del os.environ["ANTHROPIC_API_KEY"]
 
+    seen = []
+    def spy(body, timeout=60):
+        seen.append(body)
+        if len(seen) == 1:
+            return {"content": [], "stop_reason": "max_tokens"}  # thinking used the whole budget
+        return {"content": [{"type": "text", "text": '{"title": "ok"}'}], "stop_reason": "end_turn"}
+    api.post_messages = spy
+    try:
+        out, _ = api.complete_json({"max_tokens": 1000}, "object")
+    finally:
+        api.post_messages = original_post
+    case("out-of-tokens reply is retried with a doubled budget",
+         out == {"title": "ok"} and [b["max_tokens"] for b in seen] == [1000, 2000], [b["max_tokens"] for b in seen])
+    bodies = []
+    api.post_messages = lambda body, timeout=60: (bodies.append(body), {"content": [{"type": "text", "text": ideas_reply}], "stop_reason": "end_turn"})[1]
+    os.environ["ANTHROPIC_API_KEY"] = "sk-ant-" + "x" * 60
+    try:
+        generate_ideas(channel, [{"topic": "Printer jam", "source": "seed", "score": 1}], 1, "anthropic")
+        api.post_messages = lambda body, timeout=60: (bodies.append(body), {"content": [{"type": "text", "text": copy_reply}], "stop_reason": "end_turn"})[1]
+        AnthropicCopywriter().write(channel, {"scenario": "s", "dialogue": ["d"], "hook_text": "h"})
+    finally:
+        api.post_messages = original_post
+        del os.environ["ANTHROPIC_API_KEY"]
+    case("model calls use low effort and a roomy token budget",
+         all(b["output_config"] == {"effort": "low"} for b in bodies) and bodies[0]["max_tokens"] >= 1500 and bodies[1]["max_tokens"] >= 4096,
+         [(b["max_tokens"], b.get("output_config")) for b in bodies])
+
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
         if not passed and detail:
