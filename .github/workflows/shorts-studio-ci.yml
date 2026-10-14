@@ -16,6 +16,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-      - run: pip install pyflakes
+      - run: pip install pyflakes numpy
       - run: python3 -m pyflakes app evals
       - run: python3 evals/run_evals.py
