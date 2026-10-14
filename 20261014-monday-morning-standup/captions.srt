@@ -1,0 +1,3 @@
+1
+00:00:00,400 --> 00:00:07,700
+Everyone has opinions about Monday morning standup. I have a nap schedule.

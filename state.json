@@ -1,0 +1,17 @@
+{
+  "episodes": {
+    "20261014-monday-morning-standup": {
+      "status": "planned",
+      "history": [],
+      "title": "Monday morning standup, honestly 🏢",
+      "episode": 1,
+      "score": 100,
+      "dialogue": [
+        "Everyone has opinions about Monday morning standup. I have a nap schedule."
+      ],
+      "seconds": 8,
+      "topic": "Monday morning standup"
+    }
+  },
+  "spend_usd": 0.0
+}
