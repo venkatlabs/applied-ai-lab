@@ -8,20 +8,23 @@ on:
       count:
         description: "New episodes to plan (0 = none, just render)"
         default: "1"
+      reprocess_id:
+        description: "Redo trimming/captions/stitching for this episode from clips already rendered (free; no Veo)"
+        default: ""
       episode_id:
         description: "Render only this episode id (optional)"
         default: ""
       max_clips:
-        description: "Max clips to render this run"
-        default: "1"
+        description: "Max Veo clips (shots) to render this run; a 3-shot episode needs 3"
+        default: "3"
       execute:
         description: "Render with Veo (spends money)"
         type: boolean
         default: false
       ideas:
-        description: "Idea writer (anthropic needs ANTHROPIC_API_KEY secret)"
+        description: "Where episodes come from: bank = curated ideas, anthropic = model-written (needs ANTHROPIC_API_KEY)"
         type: choice
-        options: [mock, anthropic]
+        options: [bank, anthropic, mock]
         default: mock
       live_trends:
         description: "Also pull Google Trends / YouTube popular"
@@ -84,13 +87,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install google-genai
+      - run: pip install google-genai faster-whisper
+      - name: Cache speech-recognition model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-base.en-v1
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
 
       - name: Run one cycle
         run: |
+          if [ -n "${{ inputs.reprocess_id }}" ]; then
+            python3 -m app reprocess --only "${{ inputs.reprocess_id }}"
+            exit 0
+          fi
           COUNT="${{ inputs.count }}"; COUNT="${COUNT:-1}"
-          ARGS="--count $COUNT --max-clips ${{ inputs.max_clips || '1' }} --ideas ${{ inputs.ideas || 'mock' }}"
+          ARGS="--count $COUNT --max-clips ${{ inputs.max_clips || '3' }} --ideas ${{ inputs.ideas || 'bank' }}"
           [ -n "${{ inputs.episode_id }}" ] && ARGS="$ARGS --only ${{ inputs.episode_id }}"
           [ "${{ inputs.ideas }}" = "anthropic" ] && ARGS="$ARGS --copywriter anthropic"
           [ "${{ inputs.live_trends }}" = "true" ] && ARGS="$ARGS --live-trends"

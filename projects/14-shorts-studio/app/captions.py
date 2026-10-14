@@ -86,14 +86,20 @@ def detect_content_crop(video, min_bar_fraction=0.03):
     return cw, ch, x, y, width, height
 
 
-def video_filter(video):
-    """Crop away baked-in bars, scale the picture to fill the original frame, then burn captions."""
+def bars_filter(video):
+    """ffmpeg filters that crop away baked-in bars and refill the frame, or '' when there are none."""
     crop = detect_content_crop(video)
     if not crop:
-        return "ass=captions.ass"
+        return ""
     cw, ch, x, y, width, height = crop
     return (f"crop={cw}:{ch}:{x}:{y},scale={width}:{height}:force_original_aspect_ratio=increase,"
-            f"crop={width}:{height},ass=captions.ass")
+            f"crop={width}:{height}")
+
+
+def video_filter(video):
+    """Crop away baked-in bars, scale the picture to fill the original frame, then burn captions."""
+    crop = bars_filter(video)
+    return f"{crop},ass=captions.ass" if crop else "ass=captions.ass"
 
 
 def burn(folder, source="raw.mp4", output="final.mp4"):
@@ -112,36 +118,48 @@ def burn(folder, source="raw.mp4", output="final.mp4"):
     return folder / output
 
 
-def speech_bursts(video, noise_db=-35, min_silence=0.25, merge_gap=0.6):
-    """Find spoken stretches from audio loudness (ffmpeg silencedetect). Returns [(start, end)]."""
-    result = subprocess.run(
-        ["ffmpeg", "-hide_banner", "-i", str(video), "-af",
-         f"silencedetect=noise={noise_db}dB:d={min_silence}", "-vn", "-f", "null", "-"],
-        capture_output=True, text=True,
-    )
-    starts = [float(m) for m in re.findall(r"silence_start: ([\d.]+)", result.stderr)]
-    ends = [float(m) for m in re.findall(r"silence_end: ([\d.]+)", result.stderr)]
-    total = None
-    match = re.search(r"Duration: (\d+):(\d+):([\d.]+)", result.stderr)
-    if match:
-        h, m, sec = match.groups()
-        total = int(h) * 3600 + int(m) * 60 + float(sec)
-    # Speech = the gaps between silences.
-    silences = list(zip(sorted(starts), sorted(ends) + ([total] if len(ends) < len(starts) and total else [])))
-    bursts, cursor = [], 0.0
-    for sil_start, sil_end in silences:
-        if sil_start - cursor > 0.15:
-            bursts.append([cursor, sil_start])
-        cursor = sil_end
-    if total and total - cursor > 0.15:
-        bursts.append([cursor, total])
+def loudness_db(video, hop=0.02):
+    """Loudness (dBFS) of every 20 ms of the clip's audio, measured directly from decoded samples."""
+    from array import array
+    from math import log10, sqrt
+    data = subprocess.run(["ffmpeg", "-v", "error", "-i", str(video), "-vn", "-ac", "1", "-ar", "16000",
+                           "-af", "aresample=async=1:first_pts=0", "-f", "s16le", "-"],
+                          capture_output=True).stdout
+    samples = array("h")
+    samples.frombytes(data[: len(data) // 2 * 2])
+    step = int(16000 * hop)
+    levels = []
+    for i in range(0, len(samples) - step + 1, step):
+        rms = sqrt(sum(v * v for v in samples[i:i + step]) / step)
+        levels.append(20 * log10(max(rms, 1.0) / 32768))
+    return levels
+
+
+def speech_bursts(video, hop=0.02, merge_gap=0.35, min_len=0.15):
+    """Spoken stretches [(start, end)] from loudness. The threshold sits above the room-noise floor, so a steady
+    background (office hum, a copier) is not mistaken for speech."""
+    levels = loudness_db(video, hop)
+    if not levels:
+        return []
+    ranked = sorted(levels)
+    floor, peak = ranked[int(len(ranked) * 0.2)], ranked[int(len(ranked) * 0.95)]
+    if peak - floor < 6:  # nothing stands out from the noise
+        return []
+    threshold = max(floor + 0.35 * (peak - floor), floor + 6, -55)
+    bursts, start = [], None
+    for i, level in enumerate(levels + [-120]):
+        if level > threshold and start is None:
+            start = i
+        elif level <= threshold and start is not None:
+            bursts.append([start * hop, i * hop])
+            start = None
     merged = []
-    for start, end in bursts:
-        if merged and start - merged[-1][1] < merge_gap:
-            merged[-1][1] = end
+    for a, b in bursts:
+        if merged and a - merged[-1][1] < merge_gap:
+            merged[-1][1] = b
         else:
-            merged.append([start, end])
-    return [(a, b) for a, b in merged]
+            merged.append([a, b])
+    return [(a, b) for a, b in merged if b - a >= min_len]
 
 
 def cues_from_speech(dialogue, bursts):

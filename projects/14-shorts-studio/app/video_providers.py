@@ -18,8 +18,8 @@ class VideoProviderError(RuntimeError):
 class ManualProvider:
     name = "manual"
 
-    def generate(self, folder, prompt, seconds):
-        return None  # prompt.txt is already written; nothing to render
+    def generate(self, folder, prompt, seconds, filename="raw.mp4"):
+        return None  # the prompt files are already written; nothing to render
 
 
 class VeoProvider:
@@ -30,7 +30,7 @@ class VeoProvider:
         self.poll_seconds = poll_seconds
         self.timeout_seconds = timeout_seconds
 
-    def generate(self, folder, prompt, seconds):
+    def generate(self, folder, prompt, seconds, filename="raw.mp4"):
         try:
             from google import genai
             from google.genai import types
@@ -55,7 +55,7 @@ class VeoProvider:
         if not videos:
             raise VideoProviderError("Veo returned no video (possibly blocked by safety filters).")
         client.files.download(file=videos[0].video)
-        target = Path(folder) / "raw.mp4"
+        target = Path(folder) / filename
         videos[0].video.save(str(target))
         return target
 
