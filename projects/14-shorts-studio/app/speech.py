@@ -9,7 +9,6 @@ import os
 import re
 import shutil
 import subprocess
-import tempfile
 import traceback
 import urllib.error
 import urllib.request
@@ -64,6 +63,19 @@ def split_phrases(lines):
     return [p.strip() for line in lines for p in PHRASE.findall(line) if p.strip()]
 
 
+def samples16k(video):
+    """The clip's audio as float32 samples at 16 kHz mono, on the clip's own timeline (leading silence kept).
+
+    Decoded here with ffmpeg and handed to the model as an array: faster-whisper's own decoder (PyAV) broke with
+    newer PyAV releases ("unexpected keyword argument 'metadata_errors'"), and an array skips that code entirely.
+    """
+    import numpy as np
+    data = subprocess.run(["ffmpeg", "-v", "error", "-i", str(video), "-vn", "-ac", "1", "-ar", "16000",
+                           "-af", "aresample=async=1:first_pts=0", "-f", "s16le", "-"],
+                          capture_output=True, check=True).stdout
+    return np.frombuffer(data[: len(data) // 2 * 2], dtype=np.int16).astype(np.float32) / 32768.0
+
+
 def transcribe(video, log=print):
     """[{'word', 'start', 'end'}] or None when speech recognition is not available."""
     global _model
@@ -74,14 +86,10 @@ def transcribe(video, log=print):
     try:
         if _model is None:
             _model = WhisperModel(model_dir(os.getenv("WHISPER_MODEL", "base.en")), device="cpu", compute_type="int8")
-        with tempfile.TemporaryDirectory() as tmp:
-            wav = Path(tmp) / "audio.wav"  # decode on the clip's own timeline (keeps any leading silence)
-            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-vn", "-ac", "1", "-ar", "16000",
-                            "-af", "aresample=async=1:first_pts=0", str(wav)], check=True)
-            segments, _ = _model.transcribe(str(wav), language="en", word_timestamps=True,
-                                            vad_filter=False, condition_on_previous_text=False)
-            return [{"word": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3)}
-                    for segment in segments for w in (segment.words or [])]
+        segments, _ = _model.transcribe(samples16k(video), language="en", word_timestamps=True,
+                                        vad_filter=False, condition_on_previous_text=False)
+        return [{"word": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3)}
+                for segment in segments for w in (segment.words or [])]
     except Exception as error:  # a missing model or no network must not break the render
         where = " <- ".join(f"{Path(f.filename).name}:{f.lineno}" for f in reversed(traceback.extract_tb(error.__traceback__)[-4:]))
         log(f"  speech recognition unavailable ({type(error).__name__}: {error} at {where}); using loudness timing instead")

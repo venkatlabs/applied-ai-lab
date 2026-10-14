@@ -134,6 +134,54 @@ def run(case, channel):
                 os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
             server.shutdown()
 
+    # --- the speech-recognition call (stub model: the real library is only available in CI/Actions)
+    try:
+        import numpy
+    except ImportError:
+        numpy = None
+    if numpy is not None and shutil.which("ffmpeg"):
+        import sys
+        import types
+
+        received = {}
+
+        class Word:
+            def __init__(self, word, start, end):
+                self.word, self.start, self.end = word, start, end
+
+        class StubModel:
+            def __init__(self, path, **kwargs):
+                received["path"] = path
+
+            def transcribe(self, audio, **kwargs):
+                received["audio"] = audio
+                received["kwargs"] = kwargs
+                return iter([types.SimpleNamespace(words=[Word(" Hard", 2.5, 2.8), Word(" pass.", 2.85, 3.2)])]), None
+
+        fake = types.ModuleType("faster_whisper")
+        fake.WhisperModel = StubModel
+        saved, saved_model = sys.modules.get("faster_whisper"), speech._model
+        sys.modules["faster_whisper"], speech._model = fake, StubModel("preloaded")
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                clip = Path(tmp) / "c.mp4"
+                synthetic_clip(clip)
+                heard = speech.transcribe(clip, log=lambda *_: None)
+        finally:
+            speech._model = saved_model
+            if saved is None:
+                sys.modules.pop("faster_whisper", None)
+            else:
+                sys.modules["faster_whisper"] = saved
+        audio = received.get("audio")
+        case("the model is given decoded samples, not a file (avoids the broken PyAV decoder)",
+             isinstance(audio, numpy.ndarray) and audio.dtype == numpy.float32, type(audio))
+        case("decoded audio keeps the leading silence (about 8 s at 16 kHz)", audio is not None and abs(len(audio) / 16000 - 8) < 0.2,
+             None if audio is None else len(audio) / 16000)
+        case("recognised words come back with their times", heard == [{"word": "Hard", "start": 2.5, "end": 2.8}, {"word": "pass.", "start": 2.85, "end": 3.2}], heard)
+    else:
+        case("numpy/ffmpeg unavailable: recognition-call eval skipped", True)
+
     # --- trimming
     case("dead air before the voice is trimmed (leaving a short lead-in)", plan_trim((0.6, 3.0), 8) == (0.35, 3.35 + 0.0) or abs(plan_trim((0.6, 3.0), 8)[0] - 0.35) < 1e-6)
     case("trim never cuts more than the cap off the start", plan_trim((5.0, 6.0), 8)[0] == 1.5)
