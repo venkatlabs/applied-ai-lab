@@ -124,6 +124,10 @@ def cues_from_speech(dialogue, bursts):
     phrases = [p.strip() for line in dialogue for p in re.findall(r"[^.:;,?!]+[.:;,?!]*", line) if p.strip()]
     if len(phrases) == len(bursts):
         return [(a, b, phrase) for (a, b), phrase in zip(bursts, phrases)]
+    bursts = list(bursts)
+    while len(bursts) > len(all_words):  # extra bursts are room noise: merge the closest pair
+        gap, i = min((bursts[k + 1][0] - bursts[k][1], k) for k in range(len(bursts) - 1))
+        bursts[i:i + 2] = [(bursts[i][0], bursts[i + 1][1])]
     total = sum(b - a for a, b in bursts)
     cues, index = [], 0
     for position, (start, end) in enumerate(bursts):
@@ -131,7 +135,7 @@ def cues_from_speech(dialogue, bursts):
             count = len(all_words) - index
         else:
             count = max(1, round(len(all_words) * (end - start) / total))
-            count = min(count, len(all_words) - index - (len(bursts) - position - 1))
+            count = max(1, min(count, len(all_words) - index - (len(bursts) - position - 1)))
         chunk = all_words[index:index + count]
         index += count
         if chunk:

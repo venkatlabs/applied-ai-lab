@@ -121,6 +121,43 @@ def main():
     two = cues_from_speech(["Per my last email: I need a nap."], [(1.4, 2.6), (4.1, 6.2)])
     case("caption phrases map onto speech bursts", [c[2] for c in two] == ["Per my last email:", "I need a nap."], two)
 
+    noisy = cues_from_speech(["go now"], [(0, .3), (.5, .8), (1, 1.3), (1.5, 1.8)])
+    case("extra speech bursts never duplicate or drop words", " ".join(c[2] for c in noisy) == "go now", noisy)
+
+    from app import autopilot
+    from app.pipeline import episode_seconds
+    case("per-episode duration is kept (6s stays 6s)", episode_seconds(channel, {"clip_seconds": 6}) == 6)
+    uploads = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for ep_id in ("a", "b"):
+            (Path(tmp) / ep_id).mkdir()
+            (Path(tmp) / ep_id / "youtube.json").write_text(json.dumps({"title": ep_id}))
+        st = State(tmp + "/state.json")
+        for ep_id in ("a", "b"):
+            st.ensure(ep_id); st.set_status(ep_id, "pending_review"); st.set_status(ep_id, "approved")
+        st.save()
+
+        def flaky(folder, pack, publish_at):
+            if pack["title"] == "b":
+                raise RuntimeError("network down")
+            uploads.append(pack["title"])
+            return "vid-" + pack["title"]
+        try:
+            autopilot.publish_approved(tmp, flaky, True, log=lambda *_: None)
+        except RuntimeError:
+            pass
+        after = State(tmp + "/state.json")
+        case("successful upload is persisted before a later one fails",
+             after.with_status("published") == ["a"] and after.with_status("approved") == ["b"])
+        autopilot.publish_approved(tmp, lambda f, p, t: "vid-" + p["title"], True, log=lambda *_: None)
+        case("retry does not re-upload the first video", uploads == ["a"])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        sp = State(tmp + "/s.json")
+        sp.add_spend(1.2); sp.add_spend(0.8)
+        case("monthly spend accumulates for the cap check", sp.month_spend() == 2.0 and sp.data["spend_usd"] == 2.0)
+    case("monthly cap is configured", channel["veo"]["max_budget_usd_per_month"] > 0)
+
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
         if not passed and detail:

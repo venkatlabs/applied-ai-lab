@@ -42,8 +42,17 @@ class State:
     def with_status(self, status):
         return [i for i, e in self.data["episodes"].items() if e["status"] == status]
 
+    @staticmethod
+    def month_key():
+        return datetime.now(timezone.utc).strftime("%Y-%m")
+
+    def month_spend(self):
+        return self.data.get("spend_by_month", {}).get(self.month_key(), 0.0)
+
     def add_spend(self, usd):
         self.data["spend_usd"] = round(self.data["spend_usd"] + usd, 4)
+        months = self.data.setdefault("spend_by_month", {})
+        months[self.month_key()] = round(months.get(self.month_key(), 0.0) + usd, 4)
 
     def used_titles(self):
         return [e["title"] for e in self.data["episodes"].values() if e.get("title")]

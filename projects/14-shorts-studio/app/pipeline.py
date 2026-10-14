@@ -23,6 +23,11 @@ def plan_episode(channel, episode, copywriter, used_titles):
     return {"copy": copy, "prompt": prompt, "packs": packs, "report": report}
 
 
+def episode_seconds(channel, episode):
+    return min(int(episode.get("clip_seconds", channel["limits"]["clip_seconds_max"])),
+               channel["limits"]["clip_seconds_max"])
+
+
 def write_episode(out, channel, episode, plan):
     folder = Path(out) / episode["id"]
     folder.mkdir(parents=True, exist_ok=True)
@@ -31,8 +36,7 @@ def write_episode(out, channel, episode, plan):
     write_json(folder / "tiktok.json", plan["packs"]["tiktok"])
     write_json(folder / "instagram.json", plan["packs"]["instagram"])
     write_json(folder / "report.json", plan["report"])
-    seconds = min(int(episode.get("clip_seconds", channel["limits"]["clip_seconds_max"])),
-                  channel["limits"]["clip_seconds_max"])
+    seconds = episode_seconds(channel, episode)
     write_caption_files(folder, episode["dialogue"], seconds)
     return folder
 
@@ -49,13 +53,13 @@ def run_plan(prompts_path, out_dir, channel_path=None, copywriter="mock", start=
         plan = plan_episode(channel, episode, writer, used_titles)
         used_titles.append(plan["copy"]["title"])
         write_episode(out, channel, episode, plan)
-        planned.append({"id": episode["id"], **plan})
+        planned.append({"id": episode["id"], "seconds": episode_seconds(channel, episode), **plan})
 
     ready_ids = [p["id"] for p in planned if p["report"]["ready"]]
     schedule = build_schedule(channel, ready_ids, start)
     write_json(out / "schedule.json", schedule)
     summary = [
-        {"id": p["id"], "title": p["copy"]["title"], "score": p["report"]["score"],
+        {"id": p["id"], "title": p["copy"]["title"], "seconds": p["seconds"], "score": p["report"]["score"],
          "ready": p["report"]["ready"], "blockers": p["report"]["blockers"]}
         for p in planned
     ]

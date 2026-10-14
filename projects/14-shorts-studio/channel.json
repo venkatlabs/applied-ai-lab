@@ -45,7 +45,8 @@
     "model": "veo-3.1-fast-generate-preview",
     "price_per_second_usd": 0.15,
     "price_note": "Conservative estimate from third-party sources (Fast ~$0.10-0.15/s, Standard ~$0.40/s). Verify on Google's Gemini API pricing page and edit.",
-    "max_budget_usd_per_run": 3.0
+    "max_budget_usd_per_run": 3.0,
+    "max_budget_usd_per_month": 30.0
   },
   "trends": {
     "geo": "US",

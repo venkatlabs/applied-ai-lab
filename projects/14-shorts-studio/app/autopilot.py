@@ -120,6 +120,10 @@ def _render_or_report(state, out, channel, execute, max_clips, provider, log):
             if spent + cost > budget:
                 log(f"  budget: ${spent + cost:.2f} would exceed ${budget:.2f}/run; stopping renders.")
                 break
+            monthly = channel["veo"].get("max_budget_usd_per_month")
+            if monthly is not None and state.month_spend() + cost > monthly:
+                log(f"  budget: ${state.month_spend() + cost:.2f} would exceed the ${monthly:.2f}/month cap; stopping renders.")
+                break
             folder = out / ep_id
             renderer.generate(folder, (folder / "prompt.txt").read_text(), info["seconds"])
             spent += cost
@@ -164,8 +168,8 @@ def publish_approved(out, upload, execute, channel_path=None, log=print):
         video_id = upload(folder, pack, slot["publishAt"])
         state.ensure(slot["id"], publishAt=slot["publishAt"], youtube_id=video_id)
         state.set_status(slot["id"], "published", f"https://youtu.be/{video_id}")
+        state.save()  # persist now: a later failure must not make a retry re-upload this one
         log(f"uploaded {slot['id']} -> https://youtu.be/{video_id}")
-    state.save()
 
 
 def markdown_report(out, repo=None):

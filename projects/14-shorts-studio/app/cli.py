@@ -105,8 +105,7 @@ def main(argv=None):
             else:
                 for row in todo:
                     folder = Path(args.out) / row["id"]
-                    seconds = limits["clip_seconds_max"]
-                    path = provider.generate(folder, (folder / "prompt.txt").read_text(), seconds)
+                    path = provider.generate(folder, (folder / "prompt.txt").read_text(), row.get("seconds", limits["clip_seconds_max"]))
                     print(f"rendered {path}")
         elif args.command == "captions":
             for row in episode_folders(args.out, args.only):

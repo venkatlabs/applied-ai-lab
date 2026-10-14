@@ -38,6 +38,7 @@ class VeoProvider:
             raise VideoProviderError("pip install google-genai to use the veo provider.") from error
         if not os.getenv("GEMINI_API_KEY"):
             raise VideoProviderError("GEMINI_API_KEY is not set.")
+        seconds = next((s for s in (4, 6, 8) if s >= seconds), 8)  # Veo only accepts 4, 6 or 8
         client = genai.Client()
         operation = client.models.generate_videos(
             model=self.model,
