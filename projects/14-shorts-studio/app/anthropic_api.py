@@ -52,3 +52,33 @@ def post_messages(body, timeout=60):
         raise AnthropicError(f"Anthropic API HTTP {error.code}: {detail or error.reason}.{hint}") from error
     except Exception as error:
         raise AnthropicError(f"Anthropic request failed: {error}") from error
+
+
+def extract_json(text, expect):
+    """First JSON value in `text` of the wanted kind ('object' or 'array'); tolerates code fences and extra prose."""
+    opener = "{" if expect == "object" else "["
+    decoder = json.JSONDecoder()
+    start = text.find(opener)
+    while start != -1:
+        try:
+            value, _ = decoder.raw_decode(text[start:])
+            if isinstance(value, dict if expect == "object" else list):
+                return value
+        except json.JSONDecodeError:
+            pass
+        start = text.find(opener, start + 1)
+    return None
+
+
+def complete_json(body, expect="object", timeout=60, attempts=2):
+    """Call the model and return (parsed_json, payload). Retries once when the reply holds no usable JSON."""
+    last = ""
+    for _ in range(attempts):
+        payload = post_messages(body, timeout)
+        text = "".join(b.get("text", "") for b in payload.get("content", []) if b.get("type") == "text")
+        parsed = extract_json(text, expect)
+        if parsed is not None:
+            return parsed, payload
+        snippet = " ".join(text.split())[:160]
+        last = f"stop_reason={payload.get('stop_reason')}, reply began: {snippet!r}"
+    raise AnthropicError(f"Model did not return a JSON {expect} after {attempts} attempts ({last}).")

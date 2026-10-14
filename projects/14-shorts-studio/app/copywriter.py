@@ -8,7 +8,7 @@ import json
 import os
 import re
 
-from .anthropic_api import AnthropicError, post_messages
+from .anthropic_api import AnthropicError, complete_json
 
 EMOJI_BY_TAG = {
     "#meetings": "🗓️",
@@ -93,7 +93,7 @@ class AnthropicCopywriter:
         series = channel["series"]
         body = {
             "model": os.getenv("ANTHROPIC_MODEL", "claude-haiku-5-5"),
-            "max_tokens": 600,
+            "max_tokens": 1000,
             "cache_control": {"type": "ephemeral"},
             "system": self.STABLE_SYSTEM
             + f"\nSeries: {series['name']} — {series['tagline']} Audience: {series['audience']}.",
@@ -111,17 +111,9 @@ class AnthropicCopywriter:
             ],
         }
         try:
-            payload = post_messages(body)
+            result, payload = complete_json(body, "object")
         except AnthropicError as error:
             raise CopywriterError(str(error)) from error
-        text = "".join(b.get("text", "") for b in payload.get("content", []) if b.get("type") == "text")
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if not match:
-            raise CopywriterError("Model did not return JSON.")
-        try:
-            result = json.loads(match.group(0))
-        except json.JSONDecodeError as error:
-            raise CopywriterError(f"Model returned invalid JSON: {error}") from error
         for key in ("title", "hook_text", "description"):
             if not isinstance(result.get(key), str) or not result[key].strip():
                 raise CopywriterError(f"Model output missing '{key}'.")
