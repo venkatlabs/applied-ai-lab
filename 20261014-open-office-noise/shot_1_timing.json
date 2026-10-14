@@ -1,14 +1,65 @@
 {
-  "timing": "loudness",
+  "timing": "words",
   "window": [
-    0.7000000000000001,
-    7.5600000000000005
+    4.02,
+    7.26
   ],
-  "words": [],
+  "words": [
+    {
+      "word": "Can",
+      "start": 4.02,
+      "end": 4.66
+    },
+    {
+      "word": "someone",
+      "start": 4.66,
+      "end": 4.94
+    },
+    {
+      "word": "please",
+      "start": 4.94,
+      "end": 5.26
+    },
+    {
+      "word": "put",
+      "start": 5.26,
+      "end": 5.6
+    },
+    {
+      "word": "this",
+      "start": 5.6,
+      "end": 5.8
+    },
+    {
+      "word": "entire",
+      "start": 5.8,
+      "end": 6.06
+    },
+    {
+      "word": "open",
+      "start": 6.06,
+      "end": 6.5
+    },
+    {
+      "word": "floor",
+      "start": 6.5,
+      "end": 6.82
+    },
+    {
+      "word": "on",
+      "start": 6.82,
+      "end": 7.04
+    },
+    {
+      "word": "mute?",
+      "start": 7.04,
+      "end": 7.26
+    }
+  ],
   "cues": [
     [
-      0.7000000000000001,
-      7.560000000000001,
+      4.02,
+      7.26,
       "Can someone please put this entire open floor on mute?"
     ]
   ]
