@@ -100,6 +100,40 @@ def run(case, channel):
     tidy = speech.tidy([(0.0, 0.2, "a"), (0.5, 0.9, "b")])
     case("cues never overlap and have a readable minimum length", tidy[0][1] <= tidy[1][0] and all(b - a >= 0.3 for a, b, _ in tidy), tidy)
 
+    # --- model download without the huggingface_hub library (a local fake server stands in for the internet)
+    import http.server
+    import os
+    import threading
+    served = {"config.json": b"{}", "model.bin": b"x" * 500, "tokenizer.json": b"{}", "vocabulary.txt": b"a\n"}
+
+    class Fake(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = served.get(self.path.rsplit("/", 1)[-1])
+            self.send_response(200 if body is not None else 404)
+            self.end_headers()
+            if body is not None:
+                self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Fake)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    with tempfile.TemporaryDirectory() as cache:
+        old = {k: os.environ.get(k) for k in ("SHORTS_MODEL_DIR", "SHORTS_MODEL_BASE")}
+        os.environ["SHORTS_MODEL_DIR"], os.environ["SHORTS_MODEL_BASE"] = cache, f"http://127.0.0.1:{server.server_port}/"
+        try:
+            folder = speech.model_dir("base.en")
+            have = sorted(p.name for p in Path(folder).iterdir())
+            case("speech model downloads over plain HTTPS; optional files that 404 are skipped",
+                 have == ["config.json", "model.bin", "tokenizer.json", "vocabulary.txt"], have)
+            served.clear()
+            case("a second call uses the cached model without the network", speech.model_dir("base.en") == folder)
+        finally:
+            for k, v in old.items():
+                os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
+            server.shutdown()
+
     # --- trimming
     case("dead air before the voice is trimmed (leaving a short lead-in)", plan_trim((0.6, 3.0), 8) == (0.35, 3.35 + 0.0) or abs(plan_trim((0.6, 3.0), 8)[0] - 0.35) < 1e-6)
     case("trim never cuts more than the cap off the start", plan_trim((5.0, 6.0), 8)[0] == 1.5)
