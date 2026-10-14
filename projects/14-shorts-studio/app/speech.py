@@ -7,13 +7,53 @@ looks like speech. Either way the output is a list of (start, end, text) cues in
 import difflib
 import os
 import re
+import shutil
 import subprocess
 import tempfile
+import traceback
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 PHRASE = re.compile(r"[^.:;,?!]+[.:;,?!]*")
 MIN_CUE = 0.7
 _model = None
+
+
+MODEL_FILES = ("config.json", "model.bin", "tokenizer.json", "vocabulary.txt", "vocabulary.json", "preprocessor_config.json")
+MODEL_REQUIRED = ("config.json", "model.bin", "tokenizer.json")
+
+
+def model_dir(name):
+    """A local folder holding the faster-whisper model, downloaded straight over HTTPS on first use.
+
+    faster-whisper normally fetches models through the huggingface_hub library, whose newer versions clashed with it
+    in CI ("unexpected keyword argument 'metadata_errors'"), so we skip that library and fetch the files ourselves.
+    """
+    explicit = Path(name)
+    if explicit.is_dir():
+        return str(explicit)
+    root = Path(os.getenv("SHORTS_MODEL_DIR", Path.home() / ".cache" / "shorts-studio" / "whisper")) / name
+    if all((root / f).exists() for f in MODEL_REQUIRED):
+        return str(root)
+    root.mkdir(parents=True, exist_ok=True)
+    base = os.getenv("SHORTS_MODEL_BASE", f"https://huggingface.co/Systran/faster-whisper-{name}/resolve/main/")
+    for filename in MODEL_FILES:
+        target = root / filename
+        if target.exists():
+            continue
+        try:
+            with urllib.request.urlopen(base + filename, timeout=120) as response, open(str(target) + ".part", "wb") as handle:
+                shutil.copyfileobj(response, handle)
+            os.replace(str(target) + ".part", target)
+        except urllib.error.HTTPError as error:
+            if error.code == 404 and filename not in MODEL_REQUIRED:
+                continue  # optional file this model does not have
+            raise
+    missing = [f for f in MODEL_REQUIRED if not (root / f).exists()]
+    if missing:
+        raise RuntimeError(f"model download incomplete, missing {missing}")
+    return str(root)
 
 
 def norm(token):
@@ -33,7 +73,7 @@ def transcribe(video, log=print):
         return None
     try:
         if _model is None:
-            _model = WhisperModel(os.getenv("WHISPER_MODEL", "base.en"), device="cpu", compute_type="int8")
+            _model = WhisperModel(model_dir(os.getenv("WHISPER_MODEL", "base.en")), device="cpu", compute_type="int8")
         with tempfile.TemporaryDirectory() as tmp:
             wav = Path(tmp) / "audio.wav"  # decode on the clip's own timeline (keeps any leading silence)
             subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-vn", "-ac", "1", "-ar", "16000",
@@ -43,7 +83,8 @@ def transcribe(video, log=print):
             return [{"word": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3)}
                     for segment in segments for w in (segment.words or [])]
     except Exception as error:  # a missing model or no network must not break the render
-        log(f"  speech recognition unavailable ({error}); using loudness timing instead")
+        where = " <- ".join(f"{Path(f.filename).name}:{f.lineno}" for f in reversed(traceback.extract_tb(error.__traceback__)[-4:]))
+        log(f"  speech recognition unavailable ({type(error).__name__}: {error} at {where}); using loudness timing instead")
         return None
 
 
