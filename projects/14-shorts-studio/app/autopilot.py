@@ -166,3 +166,23 @@ def publish_approved(out, upload, execute, channel_path=None, log=print):
         state.set_status(slot["id"], "published", f"https://youtu.be/{video_id}")
         log(f"uploaded {slot['id']} -> https://youtu.be/{video_id}")
     state.save()
+
+
+def markdown_report(out, repo=None):
+    state = State(Path(out) / "state.json")
+    base = f"https://github.com/{repo}/blob/studio-data" if repo else None
+    lines = ["# Shorts Studio", "", f"Estimated render spend to date: **${state.data['spend_usd']:.2f}**", "",
+             "| # | Status | Title | Score | Files |", "|---|---|---|---|---|"]
+    for ep_id, info in sorted(state.data["episodes"].items(), key=lambda kv: kv[1].get("episode", 0)):
+        if not base:
+            files = ep_id
+        elif info["status"] == "planned":
+            files = f"[prompt]({base}/{ep_id}/prompt.txt)"
+        else:
+            files = f"[video]({base}/{ep_id}/final.mp4) · [prompt]({base}/{ep_id}/prompt.txt)"
+        lines.append(f"| {info.get('episode', '')} | {info['status']} | {info.get('title', '')} | {info.get('score', '')} | {files} |")
+    waiting = state.with_status("planned")
+    if waiting:
+        lines += ["", f"**{len(waiting)} planned episode(s) have no video yet.** Render each `prompt.txt` in Flow, "
+                  "save it as `raw.mp4` in that episode's folder, or re-run with execute on."]
+    return "\n".join(lines)

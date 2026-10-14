@@ -61,6 +61,10 @@ def parser():
         cmd.add_argument("ids", nargs="+")
         cmd.add_argument("--out", default=str(ROOT / "out"))
 
+    rep = sub.add_parser("report", help="markdown summary of every episode (used for the GitHub Actions run page)")
+    rep.add_argument("--out", default=str(ROOT / "out"))
+    rep.add_argument("--repo", help="owner/name, to link videos on the studio-data branch")
+
     pa = sub.add_parser("publish-approved", help="upload approved episodes as private + scheduled")
     pa.add_argument("--out", default=str(ROOT / "out"))
     pa.add_argument("--execute", action="store_true")
@@ -121,6 +125,8 @@ def main(argv=None):
             autopilot.run_cycle(args.out, count=args.count, ideas=args.ideas, copywriter=args.copywriter,
                                 live_trends=args.live_trends, execute=args.execute, max_clips=args.max_clips)
             print(f"\nNext: python3 -m app review --out {args.out}")
+        elif args.command == "report":
+            print(autopilot.markdown_report(args.out, args.repo))
         elif args.command == "ingest":
             from .state import State
             state = State(Path(args.out) / "state.json")

@@ -79,3 +79,14 @@ Prices below come from third-party sources and were not checked against Google's
 | Gemini API, Standard | ~$3.20 | Not worth it for 8s comedy clips. |
 
 Example with 238 Flow credits (38 of them daily): about 11 Fast clips in total, or 2 Quality. A sustainable plan is one Fast clip per day from the daily allowance, with banked credits kept for retries. The API route for the same one-clip-a-day cadence is roughly $25-35 per month, so Flow credits are the cheaper way to render until volume rises.
+
+## Running it in GitHub Actions (no laptop)
+
+Workflow: `.github/workflows/shorts-studio.yml`. **Unverified on GitHub** (it was only simulated locally), so run it manually once before trusting it.
+
+1. Repo secret: **Settings > Secrets and variables > Actions > New repository secret**, name exactly `GEMINI_API_KEY`. Optional: `ANTHROPIC_API_KEY` (better ideas/titles) and `YOUTUBE_API_KEY` (live trends).
+2. The workflow file must be on the **default branch** (`main`) for the **Run workflow** button to appear under the Actions tab.
+3. Actions > **shorts-studio** > Run workflow. Leave **execute** unticked first: it plans episodes for free. Tick it to render with Veo (about $1.20 per clip at the configured price).
+4. Results: the run page shows a table of every episode, and the clips and metadata live on the `studio-data` branch (state persists between runs there). The `episodes` artifact is a zip you can download.
+5. Upload approved clips to YouTube by hand for now. API uploads from an unaudited project stay private anyway.
+6. When a manual run looks right, uncomment the `schedule:` block for a weekly run. Check the spend first: each scheduled run renders up to `max_clips`.
