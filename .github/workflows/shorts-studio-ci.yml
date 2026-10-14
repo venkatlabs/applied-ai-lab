@@ -1,0 +1,20 @@
+name: shorts-studio-ci
+on:
+  pull_request:
+    paths: ["projects/14-shorts-studio/**", ".github/workflows/shorts-studio-ci.yml"]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/14-shorts-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyflakes
+      - run: python3 -m pyflakes app evals
+      - run: python3 evals/run_evals.py

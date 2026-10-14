@@ -13,9 +13,9 @@ from .captions import burn, cues_from_speech, speech_bursts, to_ass, to_srt
 from .config import ROOT, load_channel
 from .copywriter import get_copywriter
 from .ideas import generate_ideas
-from .pipeline import plan_episode, write_episode, write_json
+from .pipeline import plan_episode, write_episode
 from .schedule import build_schedule
-from .state import State, StateError, estimate_cost
+from .state import State, estimate_cost
 from .video_providers import get_video_provider
 
 
@@ -84,7 +84,7 @@ def run_cycle(out, channel_path=None, count=3, ideas="mock", copywriter="mock",
         writer = get_copywriter(copywriter)
         for topic, episode in zip(topics, episodes):
             plan = plan_episode(channel, episode, writer, state.used_titles())
-            folder = write_episode(out, channel, episode, plan)
+            write_episode(out, channel, episode, plan)
             ready = plan["report"]["ready"]
             state.ensure(episode["id"], title=plan["copy"]["title"], episode=episode["episode"],
                          score=plan["report"]["score"], dialogue=episode["dialogue"],

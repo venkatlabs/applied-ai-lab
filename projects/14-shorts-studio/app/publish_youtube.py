@@ -8,7 +8,6 @@ a 10,000/day default, so about six per day. UNVERIFIED against a live account.
 Note: videos uploaded through an API project that has not passed YouTube's
 compliance audit are locked to private. If publishAt never fires, that is why.
 """
-import json
 import os
 from pathlib import Path
 

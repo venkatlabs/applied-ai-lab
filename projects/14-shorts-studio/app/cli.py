@@ -3,7 +3,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import autopilot, pipeline, trends
+from . import autopilot, pipeline
 from .captions import burn
 from .config import ROOT, ConfigError, load_channel
 from .env_loader import load_dotenv

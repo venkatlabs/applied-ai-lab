@@ -210,6 +210,28 @@ def main():
     case("scene with on-screen text and wrong pronoun is flagged",
          {"scene_has_no_on_screen_text", "character_pronoun_matches"} <= flagged, flagged)
 
+    from app.copywriter import AnthropicCopywriter
+    from app.ideas import generate_ideas
+    ideas_reply = json.dumps([{"scenario": "Bubbles stares down a printer that jammed.", "dialogue": ["Per my last jam."],
+                               "hook_text": "Printer says no", "topic_tags": ["#Printers"]}])
+    copy_reply = json.dumps({"title": "Printer jam, again 🖨️", "hook_text": "Printer says no",
+                             "description": "Printer says no.\nBubbles.", "topic_tags": ["#Printers"]})
+    os.environ["ANTHROPIC_API_KEY"] = "sk-ant-" + "x" * 60
+    original_post = api.post_messages
+    try:
+        api.post_messages = lambda body, timeout=60: {"content": [{"type": "text", "text": "Here you go:\n" + ideas_reply}],
+                                                       "stop_reason": "end_turn", "usage": {}}
+        generated = generate_ideas(channel, [{"topic": "Printer jam", "source": "seed", "score": 1}], 9, "anthropic")
+        case("anthropic idea path returns the model's ideas, not templates",
+             len(generated) == 1 and generated[0]["dialogue"] == ["Per my last jam."] and generated[0]["episode"] == 9, generated)
+        api.post_messages = lambda body, timeout=60: {"content": [{"type": "text", "text": copy_reply}],
+                                                       "stop_reason": "end_turn", "usage": {"input_tokens": 1}}
+        written = AnthropicCopywriter().write(channel, generated[0])
+        case("anthropic copywriter path returns the model's copy", written["title"] == "Printer jam, again 🖨️", written)
+    finally:
+        api.post_messages = original_post
+        del os.environ["ANTHROPIC_API_KEY"]
+
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
         if not passed and detail:
