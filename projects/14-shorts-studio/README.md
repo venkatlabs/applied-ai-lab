@@ -9,7 +9,7 @@ Built around the `@social-guru` "Bubbles the Baby CEO" series, but everything se
 ```bash
 cd projects/14-shorts-studio
 python3 -m app plan                       # prompts/bubbles_batch.jsonl -> out/
-python3 evals/run_evals.py                # 27 checks
+python3 evals/run_evals.py                # 80+ checks
 ```
 
 `plan` writes, per episode, into `out/<id>/`:
@@ -30,15 +30,31 @@ plus `out/schedule.json` (daily slot, local and UTC) and `out/summary.json`.
 
 ```bash
 python3 -m app plan prompts/my_batch.jsonl --start 2026-10-14
-# render each prompt.txt in Flow, save as out/<id>/raw.mp4
-python3 -m app captions                   # raw.mp4 -> final.mp4 (ffmpeg)
+# render each shot's prompt_N.txt in Flow, save as out/<id>/raw_N.mp4 (raw.mp4 for a one-shot episode)
+python3 -m app ingest                     # trims dead air, times captions to the audio, joins shots -> final.mp4
 python3 -m app publish-youtube            # dry-run: shows what would upload
 python3 -m app publish-youtube --execute  # private + scheduled upload
 ```
 
 TikTok and Instagram are manual for now: copy from `tiktok.json` / `instagram.json`.
 
+## Episodes: 15-24 second multi-shot Shorts
+
+A Veo clip is at most 8 seconds, so an episode is 2-4 **shots** joined together. `ideas/ideas_bank.jsonl` holds 29 curated episodes (hook / escalation / payoff, 20-22 s). Run them with `python3 -m app autopilot --ideas bank --count 3` (plans only; add `--execute` to render, about $3 per 20 s episode at the configured price). Each shot is `spoken` (Bubbles says one short line to the camera) or `voiceover` (an off-camera narrator while his mouth stays closed, which avoids lip-sync). The research behind this is in [docs/RESEARCH_2026-10.md](docs/RESEARCH_2026-10.md).
+
+After rendering, each shot is trimmed so sound and action start immediately, captions are timed to the recognised words (faster-whisper; loudness timing as a fallback), baked-in black bars are cropped, and the shots are joined into `final.mp4`. `python3 -m app reprocess --only <id>` redoes that from the raw clips for free.
+
 ## Episode file format (`prompts/*.jsonl`)
+
+Multi-shot (preferred):
+
+```json
+{"id": "b01-example", "hook_text": "<=6 words", "topic_tags": ["#Niche"], "shots": [
+  {"delivery": "spoken", "scenario": "What the camera sees; Bubbles looks into the camera.", "dialogue": ["One short line."], "seconds": 6},
+  {"delivery": "voiceover", "scenario": "Next beat.", "dialogue": ["Narrator line."], "seconds": 8}]}
+```
+
+Single shot (older style, still supported):
 
 ```json
 {"id": "ep07-example", "scenario": "What we see.", "dialogue": ["What Bubbles says."],
@@ -64,7 +80,7 @@ It is **not a view predictor**. It catches cheap, known mistakes. Reach is learn
 
 ## Spending and safety defaults
 
-- `generate --provider veo` is a dry run unless `--execute`, and renders at most `--max-clips` (default 1).
+- Rendering needs `autopilot --execute`, a configured price, and stops at `--max-clips` Veo clips per run (default 3); an episode is never half-rendered, and a failure mid-episode keeps the clips already paid for.
 - Uploads are `private` with `publishAt`; nothing goes public instantly.
 - AI-generated labels are on for all three platforms.
 

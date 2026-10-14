@@ -14,7 +14,7 @@
 |---|---|---|
 | Trend discovery | Yes | Google Trends RSS (no key) and YouTube mostPopular (`YOUTUBE_API_KEY`). Unsafe topics (tragedy, politics, health scares, real people) are filtered. Falls back to `topics.txt`. **Live fetchers are unverified**; the build sandbox blocks both hosts. |
 | Episode ideas | Yes | `--ideas mock` is templated; `--ideas anthropic` writes fresh gags and varies the joke shape. |
-| Video render | **Gemini API, not Flow** | Flow has no public API. Automation uses Veo through the Gemini API (`GEMINI_API_KEY`), which is billed per second of video, separately from any Flow plan. Or render by hand in Flow and drop `raw.mp4` into the folder. |
+| Video render | **Gemini API, not Flow** | Flow has no public API. Automation uses Veo through the Gemini API (`GEMINI_API_KEY`), which is billed per second of video, separately from any Flow plan. Or render by hand in Flow and save each shot as `raw_N.mp4` (`raw.mp4` for a one-shot episode) in the episode folder. |
 | Captions | Yes | Timed from the clip's actual speech (ffmpeg loudness), not guessed. |
 | Approval | **Always a person** | Nothing auto-approves. See "Why a review gate". |
 | YouTube upload | Yes, with a catch | Uploads as private + `publishAt`. Projects that have not passed YouTube's API compliance audit are locked to private, so the final "make public" click stays manual in Studio until you pass it. Quota is about six uploads per day. |
@@ -31,14 +31,14 @@
 
 ```bash
 python3 -m app autopilot --count 5 --ideas anthropic --copywriter anthropic --live-trends           # plan only, free-ish
-python3 -m app autopilot --count 5 --ideas anthropic --copywriter anthropic --live-trends --execute --max-clips 5   # also render
+python3 -m app autopilot --count 2 --ideas bank --execute --max-clips 6   # also render (2 three-shot episodes)
 python3 -m app review                    # list clips waiting, with paths to watch
 python3 -m app approve <id> [<id> ...]   # or: reject <id>
 python3 -m app publish-approved          # dry run
 python3 -m app publish-approved --execute
 ```
 
-No Veo key yet? Run `autopilot` (plans only), render each `prompt.txt` in Flow, save as `out/<id>/raw.mp4`, then `python3 -m app ingest`.
+No Veo key yet? Run `autopilot` (plans only), render each `prompt_N.txt` in Flow, save as `out/<id>/raw_N.mp4`, then `python3 -m app ingest`. To redo trimming/captions on clips you already have: `python3 -m app reprocess --only <id>` (free; the Actions workflow has a `reprocess_id` input).
 
 To make it periodic, schedule the plan/render step (not publish), for example Mondays at 9:
 
@@ -55,7 +55,8 @@ Fully unattended, trend-chasing, AI-generated daily uploads are the pattern YouT
 ## Cost controls
 
 - Plan-only is the default; rendering needs `--execute`, a configured price, and stays under `max_budget_usd_per_run`.
-- `--max-clips` caps renders per cycle (default 1).
+- `--max-clips` caps Veo clips (shots) per cycle (default 3, one full episode); an episode that does not fit is not started.
+- Costs are saved after every paid clip, and an interrupted episode resumes from its missing shots without re-paying for the ones done.
 - Spend is accumulated in `out/state.json` (`spend_usd`). Set a billing alert in Google Cloud too; the ledger is an estimate.
 
 ## Is the full automation worth building out? (decision gate)

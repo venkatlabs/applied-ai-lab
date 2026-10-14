@@ -9,7 +9,7 @@ from .config import ROOT, ConfigError, load_channel
 from .env_loader import load_dotenv
 from .publish_youtube import PublishError, upload
 from .state import StateError
-from .video_providers import VideoProviderError, get_video_provider
+from .video_providers import VideoProviderError
 
 
 def parser():
@@ -24,13 +24,6 @@ def parser():
     plan.add_argument("--start", help="first publish date, YYYY-MM-DD (default: tomorrow)")
     plan.add_argument("--history", help="text file of previously used titles, one per line")
 
-    gen = sub.add_parser("generate", help="render clips for planned episodes")
-    gen.add_argument("--out", default=str(ROOT / "out"))
-    gen.add_argument("--provider", choices=["manual", "veo"], default="manual")
-    gen.add_argument("--only", nargs="*", help="episode ids")
-    gen.add_argument("--max-clips", type=int, default=1)
-    gen.add_argument("--execute", action="store_true", help="actually spend money on video generation")
-
     cap = sub.add_parser("captions", help="burn captions.ass into raw.mp4 -> final.mp4 with ffmpeg")
     cap.add_argument("--out", default=str(ROOT / "out"))
     cap.add_argument("--only", nargs="*")
@@ -43,12 +36,17 @@ def parser():
     auto = sub.add_parser("autopilot", help="one cycle: trends -> ideas -> plan -> render -> captions -> review queue")
     auto.add_argument("--out", default=str(ROOT / "out"))
     auto.add_argument("--count", type=int, default=3)
-    auto.add_argument("--ideas", choices=["mock", "anthropic"], default="mock")
+    auto.add_argument("--ideas", choices=["mock", "anthropic", "bank"], default="mock",
+                      help="bank = the next curated episodes from ideas/ideas_bank.jsonl")
     auto.add_argument("--copywriter", choices=["mock", "anthropic"], default="mock")
     auto.add_argument("--live-trends", action="store_true", help="also pull Google Trends / YouTube popular")
-    auto.add_argument("--max-clips", type=int, default=1)
+    auto.add_argument("--max-clips", type=int, default=3, help="max Veo clips (shots) to render this run")
     auto.add_argument("--execute", action="store_true", help="render with Veo (spends money)")
     auto.add_argument("--only", help="render only this episode id (default: oldest clean planned episode)")
+
+    rp = sub.add_parser("reprocess", help="redo trimming, captions and stitching from clips already rendered (free)")
+    rp.add_argument("--out", default=str(ROOT / "out"))
+    rp.add_argument("--only", required=True, help="episode id")
 
     ing = sub.add_parser("ingest", help="caption clips you rendered by hand (out/<id>/raw.mp4) and queue them for review")
     ing.add_argument("--out", default=str(ROOT / "out"))
@@ -93,21 +91,6 @@ def main(argv=None):
             for slot in result["schedule"]:
                 print(f"  {slot['local']}  {slot['id']}")
             print(f"\nWrote {args.out}/<episode>/ (prompt.txt, youtube/tiktok/instagram.json, captions) + schedule.json")
-        elif args.command == "generate":
-            channel_rows = episode_folders(args.out, args.only)
-            limits = load_channel()["limits"]
-            provider = get_video_provider(args.provider, load_channel())
-            todo = channel_rows[: args.max_clips]
-            if args.provider == "manual" or not args.execute:
-                for row in todo:
-                    print(f"[dry-run] {row['id']}: paste {args.out}/{row['id']}/prompt.txt into Google Flow (9:16).")
-                if args.provider == "veo":
-                    print(f"\n{len(todo)} clip(s) would be rendered. Re-run with --execute to spend credits.")
-            else:
-                for row in todo:
-                    folder = Path(args.out) / row["id"]
-                    path = provider.generate(folder, (folder / "prompt.txt").read_text(), row.get("seconds", limits["clip_seconds_max"]))
-                    print(f"rendered {path}")
         elif args.command == "captions":
             for row in episode_folders(args.out, args.only):
                 print("captioned", burn(Path(args.out) / row["id"]))
@@ -128,10 +111,12 @@ def main(argv=None):
             print(f"\nNext: python3 -m app review --out {args.out}")
         elif args.command == "report":
             print(autopilot.markdown_report(args.out, args.repo))
+        elif args.command == "reprocess":
+            autopilot.reprocess(args.out, args.only, load_channel())
         elif args.command == "ingest":
             from .state import State
             state = State(Path(args.out) / "state.json")
-            n = autopilot.ingest_manual_clips(state, args.out)
+            n = autopilot.ingest_manual_clips(state, args.out, load_channel())
             state.save()
             print(f"{n} clip(s) queued for review." if n else "No planned episode has a raw.mp4 yet.")
         elif args.command == "trends":
