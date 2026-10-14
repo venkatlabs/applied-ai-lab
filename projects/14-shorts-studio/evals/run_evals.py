@@ -259,6 +259,40 @@ def main():
          all(b["output_config"] == {"effort": "low"} for b in bodies) and bodies[0]["max_tokens"] >= 1500 and bodies[1]["max_tokens"] >= 4096,
          [(b["max_tokens"], b.get("output_config")) for b in bodies])
 
+    case("tornado/weather disaster topics are filtered", not any(trends.is_safe(t) for t in
+         ["kansas city weather tornado", "hurricane warning", "wildfire evacuation", "flash flood"]))
+    case("office topics still pass the filter", all(trends.is_safe(t) for t in ["Monday morning standup", "Reply-all email chain"]))
+    sensitive = json.dumps([None, {"scenario": "Bubbles sighs.", "dialogue": ["Fine."], "hook_text": "Fine", "topic_tags": []}])
+    api.post_messages = lambda body, timeout=60: {"content": [{"type": "text", "text": sensitive}], "stop_reason": "end_turn"}
+    os.environ["ANTHROPIC_API_KEY"] = "sk-ant-" + "x" * 60
+    try:
+        kept = generate_ideas(channel, [{"topic": "Sad news", "source": "t", "score": 1}, {"topic": "Printer jam", "source": "t", "score": 1}], 1, "anthropic")
+    finally:
+        api.post_messages = original_post
+        del os.environ["ANTHROPIC_API_KEY"]
+    case("a topic the model declines (null) is skipped, not crashed on", len(kept) == 1 and kept[0]["dialogue"] == ["Fine."], kept)
+    nocta = plan(channel, title="Printer jam, again 🖨️")
+    copy2 = dict(nocta["copy"]); copy2["description"] = "Just a line with no call to action."
+    from app.platforms import build_packs
+    case("follow CTA is appended when the model forgets it",
+         channel["series"]["cta"] in build_packs(channel, {**BASE}, copy2)["youtube"]["description"])
+    with tempfile.TemporaryDirectory() as tmp:
+        stx = State(tmp + "/s.json")
+        for ep_id, topic, failed in (("clean", "Open office noise", None), ("flawed", "Printer jam", "scene_has_no_on_screen_text"),
+                                     ("tornado", "kansas city weather tornado", None)):
+            stx.ensure(ep_id, topic=topic)
+            (Path(tmp) / ep_id).mkdir()
+            checks = [{"name": failed or "ok", "ok": failed is None}]
+            (Path(tmp) / ep_id / "report.json").write_text(json.dumps({"checks": checks}))
+        picked = autopilot.pick_renderable(stx, tmp, log=lambda *_: None)
+        case("render gate keeps only clean, safe episodes", picked == ["clean"] and stx.with_status("rejected") == ["tornado"], picked)
+        case("--only selects one episode", autopilot.pick_renderable(stx, tmp, only="clean", log=lambda *_: None) == ["clean"])
+    with tempfile.TemporaryDirectory() as tmp2:
+        st2 = State(tmp2 + "/s.json"); st2.ensure("meta", topic="Open office noise"); (Path(tmp2) / "meta").mkdir()
+        (Path(tmp2) / "meta" / "report.json").write_text(json.dumps({"checks": [{"name": "cta_present", "ok": False}]}))
+        case("a metadata-only lint flag does not block rendering",
+             autopilot.pick_renderable(st2, tmp2, log=lambda *_: None) == ["meta"])
+
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
         if not passed and detail:

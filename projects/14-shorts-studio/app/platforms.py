@@ -16,9 +16,12 @@ def build_packs(channel, episode, copy):
     ai = channel["disclosure"]["ai_generated"]
 
     yt_tags = hashtags_for(channel, copy, "youtube")
+    description = copy["description"]
+    if series["cta"].lower() not in description.lower():  # model-written copy often omits it
+        description += f"\n\n{series['name']}: {series['tagline']}\n{series['cta']}"
     youtube = {
         "title": copy["title"],
-        "description": copy["description"] + "\n\n" + " ".join(yt_tags),
+        "description": description + "\n\n" + " ".join(yt_tags),
         "tags": [t.lstrip("#") for t in yt_tags],
         "categoryId": "23",  # Comedy
         "privacyStatus": "private",

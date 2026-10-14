@@ -49,7 +49,7 @@ def lint_episode(channel, episode, copy, packs, prompt, existing_titles=()):
         check("shorts_tag", "#Shorts" in yt["description"], "#Shorts missing from description", 2),
         check("hashtag_count", channel["limits"]["youtube_hashtags"][0] <= len(yt["tags"]) <= channel["limits"]["youtube_hashtags"][1],
               f"{len(yt['tags'])} hashtags", 1),
-        check("cta_present", channel["series"]["cta"].split(".")[0].lower()[:12] in copy["description"].lower(),
+        check("cta_present", channel["series"]["cta"].split(".")[0].lower()[:12] in yt["description"].lower(),
               "description lacks the follow CTA", 1),
         check("ai_disclosure_set", packs["youtube"]["containsSyntheticMedia"] == channel["disclosure"]["ai_generated"]
               and packs["tiktok"]["ai_generated_content_label"] and packs["instagram"]["ai_label"],

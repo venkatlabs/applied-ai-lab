@@ -6,8 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       count:
-        description: "Episodes to plan"
+        description: "New episodes to plan (0 = none, just render)"
         default: "1"
+      episode_id:
+        description: "Render only this episode id (optional)"
+        default: ""
       max_clips:
         description: "Max clips to render this run"
         default: "1"
@@ -86,7 +89,9 @@ jobs:
 
       - name: Run one cycle
         run: |
-          ARGS="--count ${{ inputs.count || '1' }} --max-clips ${{ inputs.max_clips || '1' }} --ideas ${{ inputs.ideas || 'mock' }}"
+          COUNT="${{ inputs.count }}"; COUNT="${COUNT:-1}"
+          ARGS="--count $COUNT --max-clips ${{ inputs.max_clips || '1' }} --ideas ${{ inputs.ideas || 'mock' }}"
+          [ -n "${{ inputs.episode_id }}" ] && ARGS="$ARGS --only ${{ inputs.episode_id }}"
           [ "${{ inputs.ideas }}" = "anthropic" ] && ARGS="$ARGS --copywriter anthropic"
           [ "${{ inputs.live_trends }}" = "true" ] && ARGS="$ARGS --live-trends"
           [ "$EXECUTE" = "true" ] && ARGS="$ARGS --execute"

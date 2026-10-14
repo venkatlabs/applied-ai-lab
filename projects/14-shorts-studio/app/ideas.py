@@ -54,7 +54,8 @@ def anthropic_ideas(channel, topics, start_number, today=None):
         "only. In scenario, refer to the character by name and as 'he' (a baby boy), and show only things a camera "
         "sees: NO readable text, signs, screens with words, captions or quoted on-screen text. "
         "No real people, brands, tragedies, politics or medical claims. Vary setup and punchline "
-        "structure across episodes; do not reuse the same joke shape. Return ONLY the JSON array."
+        "structure across episodes; do not reuse the same joke shape. If a topic involves a disaster, severe weather, death, injury, violence, crime, illness or any ongoing tragedy, "
+        "return null in that position instead of an episode (keep one entry per topic, in order). Return ONLY the JSON array."
         f"\nSeries: {series['name']} — {series['tagline']}. Character: {series['character']['name']}."
     )
     body = {
@@ -72,6 +73,8 @@ def anthropic_ideas(channel, topics, start_number, today=None):
     stamp = (today or date.today()).strftime("%Y%m%d")
     episodes = []
     for offset, (topic, item) in enumerate(zip(topics, items)):
+        if not isinstance(item, dict):  # the model declined a sensitive topic
+            continue
         dialogue = item.get("dialogue")
         if isinstance(dialogue, str):
             dialogue = [dialogue]
