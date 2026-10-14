@@ -26,7 +26,7 @@ class VeoProvider:
     name = "veo"
 
     def __init__(self, model=None, poll_seconds=10, timeout_seconds=600):
-        self.model = model or os.getenv("VEO_MODEL", "veo-3.1-generate-preview")
+        self.model = os.getenv("VEO_MODEL") or model or "veo-3.1-fast-generate-preview"
         self.poll_seconds = poll_seconds
         self.timeout_seconds = timeout_seconds
 
@@ -59,7 +59,7 @@ class VeoProvider:
         return target
 
 
-def get_video_provider(name):
+def get_video_provider(name, channel=None):
     if name == "veo":
-        return VeoProvider()
+        return VeoProvider(model=((channel or {}).get("veo") or {}).get("model"))
     return ManualProvider()

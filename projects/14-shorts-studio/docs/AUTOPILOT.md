@@ -66,3 +66,16 @@ The API key and unattended rendering only save clicking time: rendering one clip
 2. After about 7 days, look at each in YouTube Studio: **Viewed vs. swiped away**, average view duration, replays, and subscribers gained.
 3. Go for the Gemini API and a weekly cron only if **both** hold: (a) at least one format keeps over ~70% of viewers, and (b) views per episode are flat or rising, not falling. If not, fix the concept first; automation just makes more of what is not working.
 4. Then create `GEMINI_API_KEY`, set `veo.price_per_second_usd`, and test one clip with `--execute --max-clips 1`.
+
+## Flow credits vs. the Gemini API (costs)
+
+Prices below come from third-party sources and were not checked against Google's own pages; Flow shows the exact credit cost before you generate, and Google lists API rates on its Gemini API pricing page.
+
+| Route | Cost for one 8s clip | Notes |
+|---|---|---|
+| Flow, Veo 3.1 Fast | ~20 credits | Daily credits are used first and reset daily; failed generations can still use credits. |
+| Flow, Veo 3.1 Quality | ~100 credits | Use sparingly. |
+| Gemini API, Fast | ~$0.80-1.20 | Pay per second, billed separately from Flow; no free tier for Veo 3.1. |
+| Gemini API, Standard | ~$3.20 | Not worth it for 8s comedy clips. |
+
+Example with 238 Flow credits (38 of them daily): about 11 Fast clips in total, or 2 Quality. A sustainable plan is one Fast clip per day from the daily allowance, with banked credits kept for retries. The API route for the same one-clip-a-day cadence is roughly $25-35 per month, so Flow credits are the cheaper way to render until volume rises.

@@ -111,7 +111,7 @@ def _render_or_report(state, out, channel, execute, max_clips, provider, log):
         log(f"\n{len(pending)} planned. Render each prompt.txt in Flow, save as out/<id>/raw.mp4, then run autopilot again "
             "(or `ingest`). Or add --execute to render with Veo (spends money).")
     elif pending:
-        renderer = get_video_provider(provider)
+        renderer = get_video_provider(provider, channel)
         price, budget = channel["veo"]["price_per_second_usd"], channel["veo"]["max_budget_usd_per_run"]
         spent = 0.0
         for ep_id in pending[:max_clips]:

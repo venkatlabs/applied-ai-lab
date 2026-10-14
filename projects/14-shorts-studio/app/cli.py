@@ -90,8 +90,8 @@ def main(argv=None):
             print(f"\nWrote {args.out}/<episode>/ (prompt.txt, youtube/tiktok/instagram.json, captions) + schedule.json")
         elif args.command == "generate":
             channel_rows = episode_folders(args.out, args.only)
-            provider = get_video_provider(args.provider)
             limits = load_channel()["limits"]
+            provider = get_video_provider(args.provider, load_channel())
             todo = channel_rows[: args.max_clips]
             if args.provider == "manual" or not args.execute:
                 for row in todo:
