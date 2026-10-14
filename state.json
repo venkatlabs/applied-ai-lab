@@ -23,6 +23,18 @@
       ],
       "seconds": 8,
       "topic": "Reply-all email chain"
+    },
+    "20261014-kansas-city-weather-tornado": {
+      "status": "planned",
+      "history": [],
+      "title": "Bubbles Handles the Storm Personally ⛈️",
+      "episode": 3,
+      "score": 96,
+      "dialogue": [
+        "Everyone under the table. I'll handle the sky personally."
+      ],
+      "seconds": 8,
+      "topic": "kansas city weather tornado warning"
     }
   },
   "spend_usd": 0.0

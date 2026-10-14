@@ -1,0 +1,12 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+
+[V4+ Styles]
+Format: Name,Fontname,Fontsize,PrimaryColour,OutlineColour,BackColour,Bold,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV
+Style: Default,Arial,84,&H0000FFFF,&H00000000,&H64000000,1,1,6,2,2,60,60,420
+
+[Events]
+Format: Layer,Start,End,Style,Text
+Dialogue: 0,0:00:00.40,0:00:07.70,Default,Everyone under the table. I'll handle the sky personally.
