@@ -68,6 +68,34 @@ def write_caption_files(folder, dialogue, seconds):
     return cues
 
 
+def detect_content_crop(video, min_bar_fraction=0.03):
+    """Some renders carry black bars baked into the frame. Return (w, h, x, y) of the real picture, or None."""
+    result = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-ss", "1", "-t", "3", "-i", str(video), "-vf", "cropdetect=24:2:0", "-f", "null", "-"],
+        capture_output=True, text=True,
+    )
+    size = re.search(r"Video: .*?, (\d{3,4})x(\d{3,4})", result.stderr)
+    crops = re.findall(r"crop=(\d+):(\d+):(\d+):(\d+)", result.stderr)
+    if not size or not crops:
+        return None
+    width, height = int(size.group(1)), int(size.group(2))
+    best = max(set(crops), key=crops.count)
+    cw, ch, x, y = map(int, best)
+    if cw >= width * (1 - min_bar_fraction) and ch >= height * (1 - min_bar_fraction):
+        return None
+    return cw, ch, x, y, width, height
+
+
+def video_filter(video):
+    """Crop away baked-in bars, scale the picture to fill the original frame, then burn captions."""
+    crop = detect_content_crop(video)
+    if not crop:
+        return "ass=captions.ass"
+    cw, ch, x, y, width, height = crop
+    return (f"crop={cw}:{ch}:{x}:{y},scale={width}:{height}:force_original_aspect_ratio=increase,"
+            f"crop={width}:{height},ass=captions.ass")
+
+
 def burn(folder, source="raw.mp4", output="final.mp4"):
     if not shutil.which("ffmpeg"):
         raise RuntimeError("ffmpeg is not installed; use CapCut auto-captions instead.")
@@ -75,7 +103,7 @@ def burn(folder, source="raw.mp4", output="final.mp4"):
     if not (folder / source).exists():
         raise FileNotFoundError(f"{folder / source} not found; generate or download the clip first.")
     result = subprocess.run(
-        ["ffmpeg", "-y", "-loglevel", "error", "-i", source, "-vf", "ass=captions.ass",
+        ["ffmpeg", "-y", "-loglevel", "error", "-i", source, "-vf", video_filter(folder / source),
          "-c:a", "copy", output],
         cwd=folder, capture_output=True, text=True,
     )

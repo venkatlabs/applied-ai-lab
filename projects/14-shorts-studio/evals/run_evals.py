@@ -293,6 +293,24 @@ def main():
         case("a metadata-only lint flag does not block rendering",
              autopilot.pick_renderable(st2, tmp2, log=lambda *_: None) == ["meta"])
 
+    import shutil
+    import subprocess
+    if shutil.which("ffmpeg"):
+        from app.captions import detect_content_crop, video_filter
+        with tempfile.TemporaryDirectory() as tmpv:
+            bars = Path(tmpv) / "bars.mp4"
+            clean = Path(tmpv) / "clean.mp4"
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc2=s=720x1080:d=4",
+                            "-vf", "pad=720:1280:0:100:black", "-pix_fmt", "yuv420p", str(bars)], check=True)
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc2=s=720x1280:d=4",
+                            "-pix_fmt", "yuv420p", str(clean)], check=True)
+            found = detect_content_crop(bars)
+            case("baked-in black bars are detected", found is not None and found[1] == 1080 and found[3] == 100, found)
+            case("a clean full-frame clip is left alone", detect_content_crop(clean) is None)
+            case("bar removal is part of the burn filter", video_filter(bars).startswith("crop=720:1080:0:100,"))
+    else:
+        case("ffmpeg unavailable: bar-detection evals skipped", True)
+
     for name, passed, detail in results:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
         if not passed and detail:
