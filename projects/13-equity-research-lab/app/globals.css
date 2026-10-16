@@ -29,3 +29,5 @@ table.breakdown{width:100%;border-collapse:collapse;min-width:520px}
 table.breakdown th,table.breakdown td{padding:.4rem .5rem;border-bottom:1px solid var(--line);text-align:left}
 .event-card.stale{opacity:.75}
 @media (max-width:650px){.decision-header{position:static;grid-template-columns:1fr;padding:.75rem}.dh-score{text-align:left}.dh-facts{flex-direction:column}}
+.signout{background:none;border:1px solid var(--line);color:inherit;border-radius:8px;padding:.3rem .7rem;cursor:pointer}
+.signin{max-width:32rem;margin:3rem auto}
