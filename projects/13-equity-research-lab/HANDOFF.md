@@ -4,7 +4,8 @@
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
 **Current holder:** none. Five-case research PR #15 merged as `94360fc` (code `0dbe5d3`). Claude owner-auth PR #11 remains open and separate.
-**Last updated:** 2026-10-08 by Codex
+**Last updated:** 2026-10-16 by Claude. Branch `claude/contextual-decision-p0` (P0 of the Contextual Decision spec, v0.15.0) is awaiting Venkat's merge via PR; main baseline still `c1eae6b`. 214 tests, tsc and build pass locally. P1–P3 not authorized. See `docs/CURRENT_AFFAIRS_P0_2026-10-16.md`. Unverified: live model output (needs one capped real report).
+**Prior update:** 2026-10-08 by Codex
 **Main baseline:** `94360fc` (five-case outlook atop connected-first holdings).
 **Latest feature commits:** `0dbe5d3` / merge `94360fc` (five-case outlook); `69a1965` / merge `2e9a1b9` (browser feedback).
 **Validation:** 206 tests, TypeScript, production build, PR CI and both preview/production checks pass. Synthetic actual-component browser verified five cases, weighted calculations, invalid weight rejection and restoration. Live saved cloud report verified new unavailable-model state, free explorer, hypothetical calculations and original rating restoration; no captured browser errors. Live Activity default/archive/completion controls also verified after previous browser timeouts. No paid research, brokerage refresh or trades. Fresh v0.14.0 provider output and source-level model evaluation remain open.
@@ -73,6 +74,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-16 Claude: built P0 (current-affairs evidence cards with citation/date validation, score breakdown, responsive decision header), engine v0.15.0, no extra paid call. Branch pushed, PR opened, not merged. Holder released.
 
 ### 2026-10-08 — Codex: five-case research view (PR #15)
 - Adapted IONS, XENE, FRMI, FRVO and Corteva chat structure: clear rating/decision, scenario distribution, operating drivers, downside, timing and change conditions. Chat market facts were not imported; arithmetic inconsistencies informed deterministic regression tests.

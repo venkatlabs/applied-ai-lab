@@ -8,6 +8,9 @@ import { ReportTools } from "./ReportTools";
 import type { ResearchRun } from "@/lib/types";
 
 import { ExecutiveSummary } from "./ExecutiveSummary";
+import { DecisionHeader } from "./DecisionHeader";
+import { ScoreBreakdown } from "./ScoreBreakdown";
+import { CurrentAffairsPanel } from "./CurrentAffairsPanel";
 import { InvestmentChoices } from "./InvestmentChoices";
 import { GroundingPanel } from "./GroundingPanel";
 import { SnapshotRecorder } from "./SnapshotRecorder";
@@ -43,7 +46,10 @@ export function ResearchView({ run }: { run: ResearchRun }) {
     {run.dataMode !== "demo" && !hasScores && <div className="warning"><strong>Live-data mode, incomplete analysis.</strong> The app did not substitute demo scores when a provider or AI synthesis failed. Check Research notes below.</div>}
 
     {run.dataMode !== 'demo' && <section className="panel"><h2>Research completion</h2><p>{completionState(run).note}</p>{completionState(run).status === 'evidence blocked' && <ul>{completionState(run).gaps.map(gap=><li key={gap}>{gap}</li>)}</ul>}{completionState(run).followUp && <RunResearch ticker={run.ticker} complete reportId={run.id} />}</section>}
+    <DecisionHeader run={run} />
     <ExecutiveSummary run={run} />
+    <ScoreBreakdown run={run} />
+    <CurrentAffairsPanel run={run} />
     <ScenarioDistribution key={run.id} run={run} />
     <ThesisReviewPanel run={run} />
     <PeerValuationPanel run={run} />

@@ -1,6 +1,7 @@
 import { buildDistribution } from "./scenario-distribution";
 import { completionState } from './research-completion';
 import { researchGaps } from './server/web-research';
+import { validateCurrentAffairs } from "./current-affairs";
 import { validateThesisReview, researchQuestions } from "./thesis-review";
 import { peerResearch } from "./server/peer-research";
 import { assessDecisionEvidence } from "./decision-evidence";
@@ -26,7 +27,7 @@ const EMPTY_SCORES: ResearchScores = {
 function liveShell(ticker: string): ResearchRun {
   return {
     id: crypto.randomUUID(), ticker, companyName: ticker, analyzedAt: new Date().toISOString(),
-    asOfPrice: 0, dataMode: "hybrid", skillVersion: "equity-research-v0.14.0",
+    asOfPrice: 0, dataMode: "hybrid", skillVersion: "equity-research-v0.15.0",
     score: 0, confidence: 0, verdict: "Insufficient data", scores: { ...EMPTY_SCORES },
     highlights: [], risks: [], catalysts: [], managementCredibility: [],
     expectationGap: "Awaiting sufficient live evidence.", valuationSummary: "No valuation conclusion yet.",
@@ -250,6 +251,7 @@ async function research(tickerRaw: string, focus?: string[]): Promise<ResearchRu
     run.analystSummary = ai.analystSummary;
     run.thesisKillers = ai.thesisKillers;
     if (ai.thesisReview) run.thesisReview = validateThesisReview(ai.thesisReview, citations, run.analyzedAt);
+    if (ai.currentAffairs) run.currentAffairs = validateCurrentAffairs(ai.currentAffairs, citations, run.analyzedAt);
     run.optionIdeas = []; // No live options chain; do not assign unsupported strategy fit.
     run.benchmark = "SPY";
     run.analysts = (analystData?.calls ?? []) as AnalystCall[];
