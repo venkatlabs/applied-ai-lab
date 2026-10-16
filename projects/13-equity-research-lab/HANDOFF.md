@@ -4,7 +4,7 @@
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
 **Current holder:** none. Five-case research PR #15 merged as `94360fc` (code `0dbe5d3`). Claude owner-auth PR #11 remains open and separate.
-**Last updated:** 2026-10-16 by Claude. Branch `claude/contextual-decision-p0` (P0 of the Contextual Decision spec, v0.15.0) is awaiting Venkat's merge via PR; main baseline still `c1eae6b`. 214 tests, tsc and build pass locally. P1–P3 not authorized. See `docs/CURRENT_AFFAIRS_P0_2026-10-16.md`. Unverified: live model output (needs one capped real report).
+**Last updated:** 2026-10-16 by Claude. P0 of the Contextual Decision spec (v0.15.0) merged via PR #28 as `1290bd1`; 214 tests, tsc, build and CI pass. P1–P3 not authorized. See `docs/CURRENT_AFFAIRS_P0_2026-10-16.md`. Unverified: live deployment and real model output (needs one capped real report).
 **Prior update:** 2026-10-08 by Codex
 **Main baseline:** `94360fc` (five-case outlook atop connected-first holdings).
 **Latest feature commits:** `0dbe5d3` / merge `94360fc` (five-case outlook); `69a1965` / merge `2e9a1b9` (browser feedback).
@@ -75,7 +75,7 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Log
 
-- 2026-10-16 Claude: built P0 (current-affairs evidence cards with citation/date validation, score breakdown, responsive decision header), engine v0.15.0, no extra paid call. Branch pushed, PR opened, not merged. Holder released.
+- 2026-10-16 Claude: built P0 (current-affairs evidence cards with citation/date validation, score breakdown, responsive decision header), engine v0.15.0, no extra paid call. PR #28 merged as `1290bd1`. Holder released.
 
 ### 2026-10-08 — Codex: five-case research view (PR #15)
 - Adapted IONS, XENE, FRMI, FRVO and Corteva chat structure: clear rating/decision, scenario distribution, operating drivers, downside, timing and change conditions. Chat market facts were not imported; arithmetic inconsistencies informed deterministic regression tests.
