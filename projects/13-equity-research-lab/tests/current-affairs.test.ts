@@ -79,5 +79,5 @@ it('renders views with data, legacy and not-rated states', () => {
   expect(renderToStaticMarkup(React.createElement(ScoreBreakdown, { run: { analyzedAt: at } as ResearchRun }))).toBe('');
   const hdr = renderToStaticMarkup(React.createElement(DecisionHeader, { run: r }));
   expect(hdr).toContain('ABC'); expect(hdr).toContain('/100'); expect(hdr).toContain('1 event');
-  expect(renderToStaticMarkup(React.createElement(DecisionHeader, { run: run({}, { marketAsOf: '2026-01-01' }) }))).toContain('Not rated');
+  expect(renderToStaticMarkup(React.createElement(DecisionHeader, { run: run({}, { marketAsOf: '2026-01-01' }) }))).toContain('Hold');
 });
