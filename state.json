@@ -183,8 +183,24 @@
       "topic": "Phase one: distraction"
     },
     "b03-dog-negotiation": {
-      "status": "planned",
-      "history": [],
+      "status": "pending_review",
+      "history": [
+        {
+          "status": "rendered",
+          "at": "2026-10-16T14:55:05+00:00",
+          "note": "~$3.0"
+        },
+        {
+          "status": "captioned",
+          "at": "2026-10-16T14:55:11+00:00",
+          "note": ""
+        },
+        {
+          "status": "pending_review",
+          "at": "2026-10-16T14:55:11+00:00",
+          "note": ""
+        }
+      ],
       "title": "That is my toy 😂",
       "episode": 7,
       "score": 100,
@@ -223,8 +239,8 @@
       "topic": "That is my toy"
     }
   },
-  "spend_usd": 7.5,
+  "spend_usd": 10.5,
   "spend_by_month": {
-    "2026-10": 7.5
+    "2026-10": 10.5
   }
 }

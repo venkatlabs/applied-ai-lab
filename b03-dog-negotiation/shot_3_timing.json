@@ -1,0 +1,61 @@
+{
+  "timing": "words",
+  "window": [
+    0.0,
+    2.88
+  ],
+  "words": [
+    {
+      "word": "negotiations",
+      "start": 0.0,
+      "end": 0.48
+    },
+    {
+      "word": "like",
+      "start": 0.48,
+      "end": 1.02
+    },
+    {
+      "word": "this",
+      "start": 1.02,
+      "end": 1.32
+    },
+    {
+      "word": "are",
+      "start": 1.32,
+      "end": 1.68
+    },
+    {
+      "word": "why",
+      "start": 1.68,
+      "end": 1.92
+    },
+    {
+      "word": "he",
+      "start": 1.92,
+      "end": 2.12
+    },
+    {
+      "word": "runs",
+      "start": 2.12,
+      "end": 2.32
+    },
+    {
+      "word": "the",
+      "start": 2.32,
+      "end": 2.56
+    },
+    {
+      "word": "house.",
+      "start": 2.56,
+      "end": 2.88
+    }
+  ],
+  "cues": [
+    [
+      0.0,
+      2.88,
+      "Negotiations like this are why he runs the house."
+    ]
+  ]
+}

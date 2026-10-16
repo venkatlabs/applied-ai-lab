@@ -1,11 +1,15 @@
 1
-00:00:00,400 --> 00:00:06,833
-That is my toy. Return it.
+00:00:01,120 --> 00:00:02,760
+That is my toy.
 
 2
-00:00:06,833 --> 00:00:10,050
-Pleasure doing business.
+00:00:03,640 --> 00:00:04,340
+Return it.
 
 3
-00:00:10,050 --> 00:00:19,700
+00:00:04,500 --> 00:00:05,600
+Pleasure doing business.
+
+4
+00:00:06,500 --> 00:00:09,380
 Negotiations like this are why he runs the house.

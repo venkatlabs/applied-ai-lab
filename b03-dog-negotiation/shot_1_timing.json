@@ -1,0 +1,51 @@
+{
+  "timing": "words",
+  "window": [
+    2.62,
+    5.38
+  ],
+  "words": [
+    {
+      "word": "That",
+      "start": 2.62,
+      "end": 3.38
+    },
+    {
+      "word": "is",
+      "start": 3.38,
+      "end": 3.6
+    },
+    {
+      "word": "my",
+      "start": 3.6,
+      "end": 3.88
+    },
+    {
+      "word": "toy.",
+      "start": 3.88,
+      "end": 4.26
+    },
+    {
+      "word": "Return",
+      "start": 5.14,
+      "end": 5.14
+    },
+    {
+      "word": "it.",
+      "start": 5.14,
+      "end": 5.38
+    }
+  ],
+  "cues": [
+    [
+      2.62,
+      4.26,
+      "That is my toy."
+    ],
+    [
+      5.14,
+      5.84,
+      "Return it."
+    ]
+  ]
+}
