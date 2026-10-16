@@ -92,3 +92,11 @@ Workflow: `.github/workflows/shorts-studio.yml`. **Unverified on GitHub** (it wa
 5. Upload approved clips to YouTube by hand for now. API uploads from an unaudited project stay private anyway.
 6. When a manual run looks right, uncomment one `cron` line in the workflow (weekly, three times a week, or daily). Scheduled runs only render if you create the repository **variable** `SHORTS_EXECUTE` = `true`; without it they plan only, so you can turn spending on and off without editing code.
 7. Cadence is a budget decision. At the configured Fast price each 8s clip is about $1.20, so weekly is about $5/month, three a week about $15, daily about $36. `max_budget_usd_per_month` (default $30) stops renders once the month's estimate is reached, and `max_budget_usd_per_run` caps each cycle. Flow credits are a separate pool and are not used by this route.
+
+## Uploading to YouTube from GitHub Actions
+
+Workflow **shorts-upload**: give it episode ids, it approves them and uploads each as a private, scheduled video
+(made-for-kids = No, AI-generated disclosure on, taken from `youtube.json`). Needs three repo secrets:
+`YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN` (one-time setup: create a Google Cloud OAuth
+client, enable YouTube Data API v3, get a refresh token for scope `youtube.upload`). Leave `execute` off for a dry run.
+Until the API project passes YouTube's audit, uploads stay private and you press "Public" in Studio.
