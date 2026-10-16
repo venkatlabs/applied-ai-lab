@@ -1,7 +1,7 @@
 import { Snaptrade, SnaptradeAuth } from "snaptrade-typescript-sdk";
 import type { Account, AllAccountPositionsResponse, Balance } from "snaptrade-typescript-sdk";
 
-// No web route imports this module until authenticated owner access is implemented.
+// Only /api/snaptrade imports this module, and it requires an owner session (lib/server/owner-auth.ts).
 export interface PortfolioReader {
   accounts(): Promise<Account[]>;
   positions(accountId: string): Promise<AllAccountPositionsResponse>;

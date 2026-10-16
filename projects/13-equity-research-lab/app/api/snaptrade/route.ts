@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPersonalReader, readPersonalPortfolio } from "@/lib/server/snaptrade-personal";
 import { sameOrigin } from "@/lib/server/request-security";
+import { isOwnerRequest } from "@/lib/server/owner-auth";
 
 export const maxDuration = 60;
 
-/** Manual, read-only refresh for the owner's Fidelity and Robinhood connections. */
+/** Manual, read-only refresh for the owner's Fidelity and Robinhood connections. Requires owner sign-in. */
 export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "Request origin not allowed." }, { status: 403 });
+  // The Origin header is forgeable outside browsers, so an owner session is required as well.
+  if (!isOwnerRequest(request)) {
+    return NextResponse.json({ error: "Owner sign-in required." }, { status: 401, headers: { "Cache-Control": "private, no-store" } });
+  }
   if (process.env.SNAPTRADE_PORTAL_ENABLED !== "true") {
     return NextResponse.json({ error: "Direct account refresh has not been enabled for this portal." }, { status: 503 });
   }
