@@ -24,8 +24,8 @@ Build on the existing v0.14 five-case research implementation (see `HANDOFF.md` 
 - Unknown valuation or insufficient essential evidence retains the current not-rated/decision-withholding gates. No forced Buy label or LLM-overridden deterministic arithmetic.
 - Version scoring methodology and preserve snapshot historical integrity.
 
-## Backend and provider integration ("NCD" clarification)
-The request mentions **NCD servers**. This spec provisionally treats that as **MCP or analogous external data/agent connector servers**; the exact NCD product/protocol is not established and must be confirmed before implementation. Use a server-side adapter registry, not client-side API keys:
+## Backend and provider integration (MCP servers)
+The confirmed requirement is to connect to **MCP servers (Model Context Protocol)** for backend data access. Use a server-side adapter registry, not client-side API keys:
 - Market prices/history: licensed quote vendor(s), exchange timestamps, split-adjustment, stale status.
 - Fundamentals, filings and earnings: SEC filings/company IR, current existing SEC/FMP adapters; standardized financial statement and guidance fields.
 - Analyst ratings/revisions: FMP/TipRanks or approved provider with explicit observation timestamps.
@@ -55,7 +55,7 @@ Connector interface: `discoverCapabilities()`, `fetch(subject,asOf)`, `normalize
 - Automated test fixtures cover volatile AI infrastructure (NBIS), mature profitable company, biotech binary event, corporate spin-off, pre-revenue company, missing analyst coverage and stale quotes.
 
 ## Suggested delivery sequence (no implementation authorized by this spec alone)
-**P0:** Clarify NCD protocol; implement structured current-affairs evidence cards and citation/timestamp checks, plus responsive decision header and score breakdown.  
+**P0:** Implement structured current-affairs evidence cards and citation/timestamp checks, plus responsive decision header and score breakdown.  
 **P1:** Visual five-case probability chart, reversible scenario control and reliable threshold probabilities; regression tests for arithmetic.  
 **P2:** Analyst target distributions/revisions, source freshness and provider diagnostics, sector-adapted financial panels.  
 **P3:** Portfolio-aware what-if only on explicit reveal, catalyst diffs, optional calibrated probability research after outcome data exists.
