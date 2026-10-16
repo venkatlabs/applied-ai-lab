@@ -1,4 +1,5 @@
 import { distributionInputSchema, distributionJsonSchema, type DistributionInput } from "../scenario-distribution";
+import { currentAffairsSchema, currentAffairsJsonSchema, type CurrentAffairsInput } from "../current-affairs";
 import { thesisReviewSchema, thesisReviewJsonSchema, type ThesisReviewInput } from "../thesis-review";
 import { startUsage, recordUsage } from "../server/research-cost";
 import { z } from "zod";
@@ -17,6 +18,7 @@ const schema = z.object({
   valuationSummary: z.string(),
   analystSummary: z.string(),
   thesisReview: thesisReviewSchema.optional(),
+  currentAffairs: currentAffairsSchema.optional(),
   thesisKillers: z.array(z.string()).min(2).max(6),
 
 });
@@ -34,6 +36,7 @@ export type AIResearch = {
   analystSummary: string;
   thesisKillers: string[];
   thesisReview?: ThesisReviewInput;
+  currentAffairs?: CurrentAffairsInput;
 
 };
 
@@ -43,12 +46,13 @@ function jsonSchema() {
     additionalProperties: false,
     required: [
       "investmentCase","executiveSummary","highlights","risks","catalysts","managementCredibility",
-      "expectationGap","valuationSummary","analystSummary","thesisKillers","thesisReview","scenarioDistribution",
+      "expectationGap","valuationSummary","analystSummary","thesisKillers","thesisReview","currentAffairs","scenarioDistribution",
     ],
     properties: {
       scenarioDistribution: distributionJsonSchema,
       investmentCase: investmentCaseJsonSchema,
       thesisReview: thesisReviewJsonSchema,
+      currentAffairs: currentAffairsJsonSchema,
       executiveSummary: { type: "object", additionalProperties: false, required: ["overview", "strength", "concern", "watchFor"], properties: Object.fromEntries(["overview", "strength", "concern", "watchFor"].map(key => [key, { type: "string" }])) },
       highlights: { type: "array", maxItems: 6, items: { type: "string" } },
       risks: { type: "array", maxItems: 6, items: { type: "string" } },
@@ -112,6 +116,8 @@ Each case supplies hypothetical 12-month metricPerShare, multiple and netCashPer
 Scenario weights are illustrative, not empirical probabilities.
 Business quality is not the same thing as stock attractiveness.
 Create thesisReview with at most three checks and four missing-information gaps. Use researchQuestions as prompts, not validated gates. Each check has question, observation, reviewCondition, evidenceDate, sources, reviewBy and dateBasis. Observation must be supported by exact sourceCatalog URLs and a publication/as-of date. Use empty observation/date/sources if unavailable. reviewCondition is a proposed observable condition for reconsideration, not a claim that it has occurred. Use quantitative thresholds only if supported or clearly labeled as proposed assumptions; do not invent metrics. reviewBy is YYYY-MM-DD or empty. A future event date requires source support and dateBasis Reported event. An optional suggested review date uses Planning assumption. Otherwise use empty reviewBy and Unknown. Missing industry coverage must not force Wait or imply that the company failed. Avoid blanket numeric gates and speculative forecasts. Do not calculate probabilities or scores in this section.
+Create currentAffairs with up to six dated events from the retrieved sources that could matter to this investment case (company, sector, industry, macro, regulatory or competitor). Each event has headline, scope, evidenceKind, eventDate, publishedDate, source, direction, mechanism and uncertainty. source must be an exact sourceCatalog URL and publishedDate that source's publication date (YYYY-MM-DD); omit events you cannot tie to a catalog source. Use Direct company evidence only for company-specific facts, Sector spillover for sector/industry/macro/competitor effects, and Model interpretation for your own inference. Do not claim a headline caused a price move. mechanism is one sentence on how the event could affect the thesis. gaps lists missing recent coverage. Return empty events if nothing qualifies.
+
 This is research support, not a guarantee of returns.`
             }],
           },

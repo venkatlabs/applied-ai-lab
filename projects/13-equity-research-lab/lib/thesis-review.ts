@@ -30,7 +30,7 @@ export const thesisReviewJsonSchema = {
 export function validDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 }
-function safeUrl(value: string): boolean {
+export function safeUrl(value: string): boolean {
   try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password; } catch { return false; }
 }
 /** Checks source membership and dates, not the truth or meaning of a cited claim. */
