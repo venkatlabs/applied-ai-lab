@@ -41,14 +41,23 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install google-api-python-client google-auth-oauthlib
-      - name: Approve (you started this run, so that is your approval)
-        run: python3 -m app approve ${{ inputs.episode_ids }}
-      - name: Upload as private + scheduled
+      - name: Approve (you started this run, so that is your approval) and upload
+        env:
+          EPISODE_IDS: ${{ inputs.episode_ids }}
+          EXECUTE: ${{ inputs.execute }}
         run: |
-          ARGS=""
-          [ "${{ inputs.execute }}" = "true" ] && ARGS="--execute"
-          python3 -m app publish-approved $ARGS
+          if ! printf '%s' "$EPISODE_IDS" | grep -Eq '^[A-Za-z0-9_-]+( [A-Za-z0-9_-]+)*$'; then
+            echo "::error::episode_ids must be space-separated ids (letters, digits, - and _)."; exit 1
+          fi
+          if [ "$EXECUTE" = "true" ]; then
+            python3 -m app approve $EPISODE_IDS
+            python3 -m app publish-approved --only $EPISODE_IDS --execute
+          else
+            echo "Dry run: nothing is approved or uploaded. Check the ids exist, then re-run with execute on."
+            python3 -m app review || true
+          fi
       - name: Save state to the studio-data branch
+        if: ${{ !cancelled() }}
         working-directory: projects/14-shorts-studio/out
         run: |
           git add -A

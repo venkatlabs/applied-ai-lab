@@ -66,6 +66,7 @@ def parser():
 
     pa = sub.add_parser("publish-approved", help="upload approved episodes as private + scheduled")
     pa.add_argument("--out", default=str(ROOT / "out"))
+    pa.add_argument("--only", nargs="*", help="upload just these approved episode ids")
     pa.add_argument("--execute", action="store_true")
     return p
 
@@ -133,7 +134,7 @@ def main(argv=None):
             autopilot.decide(args.out, args.ids, args.command == "approve")
             print(("approved: " if args.command == "approve" else "rejected: ") + ", ".join(args.ids))
         elif args.command == "publish-approved":
-            autopilot.publish_approved(args.out, upload, args.execute)
+            autopilot.publish_approved(args.out, upload, args.execute, only=args.only)
     except (StateError, ConfigError, VideoProviderError, PublishError, RuntimeError, FileNotFoundError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
