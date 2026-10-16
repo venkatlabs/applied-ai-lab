@@ -3,14 +3,23 @@
 > The baton. Read this first and update it last. Protocol: `AGENTS.md`.
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
-**Current holder:** none. PR #9 dated thesis reviews merged as `7796430`; PR #10 holdings-date fix merged as `604b368`.
-**Last updated:** 2026-10-04 by Claude (branch `claude/owner-auth-snaptrade`, PR open, not merged)
-**Main baseline:** `604b368` (PR #10 atop PR #9).
-**Latest feature commits:** `1713ee6` / merge `7796430` (dated reviews); `f5a9e27` / merge `604b368` (date hydration).
-**Validation:** 180 tests, TypeScript and production build pass; GitHub CI and both preview checks pass for both PRs. Both PR #9 production checks passed. Both PR #10 production checks passed. Local Chrome verified a synthetic missing-evidence report and illustrative holding review status with no captured errors; test report removed, illustrative holdings not saved. Live PR #9 review column and existing-report legacy fallback verified. No paid research or live broker calls. Fresh v0.13.0 provider output and first linked-account refresh remain unverified.
+**Current holder:** none. Five-case research PR #15 merged as `94360fc` (code `0dbe5d3`). Claude owner-auth PR #11 (updated against main 2026-10-16) is awaiting Venkat's OWNER_ACCESS_KEY setup and merge.
+**Last updated:** 2026-10-16 by Claude. P0 of the Contextual Decision spec (v0.15.0) merged via PR #28 as `1290bd1`; 214 tests, tsc, build and CI pass. P1–P3 not authorized. See `docs/CURRENT_AFFAIRS_P0_2026-10-16.md`. Unverified: live deployment and real model output (needs one capped real report).
+**Prior update:** 2026-10-08 by Codex
+**Main baseline:** `94360fc` (five-case outlook atop connected-first holdings).
+**Latest feature commits:** `0dbe5d3` / merge `94360fc` (five-case outlook); `69a1965` / merge `2e9a1b9` (browser feedback).
+**Validation:** 206 tests, TypeScript, production build, PR CI and both preview/production checks pass. Synthetic actual-component browser verified five cases, weighted calculations, invalid weight rejection and restoration. Live saved cloud report verified new unavailable-model state, free explorer, hypothetical calculations and original rating restoration; no captured browser errors. Live Activity default/archive/completion controls also verified after previous browser timeouts. No paid research, brokerage refresh or trades. Fresh v0.14.0 provider output and source-level model evaluation remain open.
 **Notion plan:** https://app.notion.com/p/3eddf6e02bd78120a3fcf8f8cc768af1
 
 ## State
+
+**October 8 five-case outlook:** Reviewed five recent Investing stock chats as design references, not verified company facts. Reports put the existing unified decision first, then severe bear through severe bull representative outcomes, explicit hypothetical earnings/sales assumptions, source links/dates, weights, deterministic weighted returns and gain/loss weights. A free local explorer changes hypothetical inputs without changing the saved report or rating. Model generation uses the existing synthesis with a 9,000-output-token cap; no additional provider call. Unsupported sector models show exact gaps. Intrinsic values remain separate from one-year prices. Engine/skill v0.14.0. See `docs/FIVE_CASE_RESEARCH_2026-10-08.md`. Existing fresh-source evaluation task in Notion now includes the model assumptions. Binary-event and pre-revenue sector models, probability calibration and live source validation remain open.
+
+**October 7 browser feedback:** Connected account dropdown selects all or one account and scopes Portfolio home/holdings/comparison through tab memory. Values are read-only; app refresh time and provider holdings/sync dates are distinct. Manual imports are collapsed below guidance. Activity starts with Saved research; journal is optional and last. Full research makes at most one automatic targeted evidence follow-up, consuming a second daily slot and at most three searches. Archived incomplete reports offer Complete research. Remaining gaps are explicit; no forced Buy. Foreign SEC USD instant cash/debt facts now accept 20-F/40-F/6-K. IFRS tags and normalized loss-making valuations remain gaps. See `docs/BROWSER_FEEDBACK_2026-10-07.md`.
+
+**Portfolio display privacy:** User requested numbers hidden by default and revealed on demand for ten minutes. Shared memory-only reveal across in-app navigation; fixed deadline, manual Hide and reload reset. Native hidden/inert removes private details from display and accessibility; forms/results stay mounted to preserve drafts. Public research metrics stay visible. This is display privacy, not account access control or encryption. PR #13 merged/deployed and live verified; see `docs/PORTFOLIO_PRIVACY_2026-10-06.md`. Durable decision and handoff mirrored in Notion. No new owner action.
+
+**Portfolio home navigation:** Venkat selected Portfolio home from three reviewed mocks. Main navigation now has Portfolio and Activity plus Account settings. The home reads connected or saved holdings, shows mix/coverage/date/concentration and per-position review/comparison actions. `/compare` autoloads the selected holding and offers the existing six trim strategies with a collapsed custom mix. Activity consolidates journal/archive/research outcomes. 180 tests, TypeScript and build pass. Local production browser verified synthetic MSFT/VTI weights, one-click non-AMZN comparison, Activity views and 320px layout. No paid research or live broker call. PR #12 merged as `33171c8`; CI, previews and both production deployments pass. Live home, saved-snapshot comparison autoload and Activity journal/cloud archive verified; see `docs/PORTFOLIO_HOME_2026-10-06.md`. Claude security PR #11 is open and remains separate.
 
 **Dated investment-case review milestone:** user authorized autonomous iteration while AFK. Engine v0.13.0 and the existing equity research skill adapt falsifiable conditions and business-specific questions from the reviewed package. New full reports include up to three dated/source-linked observations, proposed change conditions, reported or suggested review dates and evidence gaps. My holdings shows review status and saved-report links through Next Link. Deterministic guards withhold unsupported observations; review dates do not alter verdicts. 180 tests, TypeScript and production build pass. Local synthetic saved-report and holdings browser checks pass, without paid research or brokerage access. Fresh live report output remains unverified. No migration. Details and next priorities: `docs/THESIS_REVIEW_2026-10-04.md`.
 
@@ -48,7 +57,9 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 ## Next up (in order)
 
 00. **Venkat, before the next `/accounts` refresh:** add `OWNER_ACCESS_KEY` (server-only, `openssl rand -base64 32`) to Vercel Production + Preview, then merge the owner-auth PR. Until the key is set, account refresh is disabled by design. Keep it in a password manager; never in chat, Notion or the repo.
-0. Any agent: evaluate one fresh v0.13.0 report against actual source observations, dates, proposed thresholds and event dates. Prefer an existing report; otherwise one explicit capped request. Notion action: https://app.notion.com/p/3efdf6e02bd781399bd9d6c13b0df83e. Skill validation script lacked PyYAML; frontmatter/reference paths inspected manually.
+- Owner: complete the existing owner-key / security PR #11 setup and first brokerage refresh/reconciliation task. Portfolio home is delivered; no new navigation approval is needed. Next agent: verify imported mutual-fund classification, then improve portfolio-aware candidate additions and destination allocations without adding more menu destinations.
+
+0. Any agent: evaluate one fresh v0.14.0 report against actual source observations, dates, proposed thresholds, event dates and five-case operating/dilution/valuation assumptions. Prefer an existing report; otherwise one explicit capped request. Notion action: https://app.notion.com/p/3efdf6e02bd781399bd9d6c13b0df83e. Skill validation script lacked PyYAML; frontmatter/reference paths inspected manually.
 1. Venkat: refresh `/accounts` and confirm holdings remain available while navigating to My holdings, Portfolio Lab and Diversify a holding. Reconcile account coverage, totals and dates against the brokers; record status only, never raw values. Reloading should clear the in-memory snapshot.
 2. Build the next approved decision milestone on the shared portfolio: compare destination allocations and staged reductions with clearer cost-basis and uncertainty handling. Keep alternatives user-editable and avoid forced Buy labels.
 3. Verify imported mutual-fund classification before fund look-through, then continue Monarch where its official MCP is available, historical ROI (XIRR/TWR only with sufficient dates/flows), and prospective benchmark validation. No automatic sync/research or trades.
@@ -64,6 +75,26 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-16 Claude: built P0 (current-affairs evidence cards with citation/date validation, score breakdown, responsive decision header), engine v0.15.0, no extra paid call. PR #28 merged as `1290bd1`. Holder released.
+
+### 2026-10-08 — Codex: five-case research view (PR #15)
+- Adapted IONS, XENE, FRMI, FRVO and Corteva chat structure: clear rating/decision, scenario distribution, operating drivers, downside, timing and change conditions. Chat market facts were not imported; arithmetic inconsistencies informed deterministic regression tests.
+- Five-case sourced starting facts plus explicit forecast assumptions, code-computed prices/returns/weighted outcomes, provenance/date/weight guards. Free local scenario explorer does not change archived ratings. Existing DCF remains separate; unsupported models remain gaps.
+- Code `0dbe5d3`, merge `94360fc`; 206 tests, TypeScript, build, CI and both preview/production checks pass. Synthetic component browser tests and live saved report/explorer/calculation/restoration pass, no captured browser errors.
+- No paid research, trades or brokerage calls. Notion Decision Log/project context and existing fresh-source evaluation task updated. Next agent evaluates one fresh v0.14.0 model against its sources, preferring an existing report. Owner reconciliation/security PR #11 remain open. Holder released.
+
+### 2026-10-07 — Codex: five browser comments delivered (PR #14)
+- Connected account selection replaces editable account scope for connected holdings, with read-only values and separate refresh/provider dates. Account selection is shared across portfolio tools; imports and journal are lower priority.
+- One bounded automatic full-report evidence follow-up and explicit archive completion controls; existing daily cap applies to each new report. Foreign-filer balance facts fixed without inventing missing debt or valuation inputs.
+- Code `69a1965`, merge `2e9a1b9`. 196 tests, TypeScript, build, CI and both preview/production checks pass. Synthetic actual-component and local production UI checks pass.
+- Post-deploy in-app browser navigation repeatedly timed out. Next agent should verify the live holdings/Activity pages, then one fresh targeted report against source evidence. No paid research or live brokerage calls in this delivery. Existing owner reconciliation and security PR #11 remain open. No private figures in GitHub/Notion.
+
+### 2026-10-06 — Codex: approved Portfolio home navigation
+- Two main destinations, accounts as settings, compact portfolio overview and holding rows, one comparison entry point, Activity journal/archive/outcomes. Prior URLs remain usable.
+- Selected connected/saved holdings autoload into trim comparisons; changing symbols loads values immediately. Latest saved report links avoid a needless fresh-research entry. No paid calls added.
+- 180 tests, TypeScript and build pass. Local synthetic production browser verification and phone layout pass. Cloud archive unavailable locally; visible browser fallback verified. Live data, tax-lot/fund overlap and ROI limits remain open.
+- Notion project direction, Decision Log and Handoff log updated. Code `d0beced`, PR #12 merge `33171c8`; CI, both previews and both production deployments pass. Live home/saved snapshot, selected-holding autoload, Activity journal/cloud archive and clean browser log verified. Holder released.
 
 ### 2026-10-04 — Claude: owner sign-in for connected accounts (branch `claude/owner-auth-snaptrade`)
 - Security review finding: `/api/snaptrade` returned all Fidelity/Robinhood positions with cost basis, guarded only by a same-origin check (forgeable with curl) and Vercel Deployment Protection.
@@ -119,3 +150,5 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - **2026-09-30 · Claude (session 2).** Vercel protection → All Deployments. Branch `claude/p0-lockdown-and-valuation`: P0 cost guard, deterministic DCF valuation, diversification check, zero-cost track record, CI. 106 tests. Not pushed (session lacks repo push access); delivered as patch series.
 - **2026-09-30 · Claude.** Reviewed the codebase and added `AGENTS.md`, `CLAUDE.md`, `HANDOFF.md` and `docs/REVIEW_2026-09-30_claude.md`. No product code changed.
 - **2026-09-25 · Codex.** Last feature commit `2e26aed`: peer valuation inputs and reference limitations.
+
+- **2026-10-06 · Codex privacy delivery.** PR #13 merged as `b3a26cd`, code `68084dd`. Default-hidden portfolio numbers with fixed ten-minute reveal, navigation retention, manual hide and reload reset. 183 tests, types, build, CI and both preview/production checks pass. Local and live browser behavior verified; drafts preserved. No private financial values recorded. Security PR #11 and brokerage reconciliation remain open. Baton released.

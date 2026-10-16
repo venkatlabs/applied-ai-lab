@@ -26,6 +26,7 @@ describe("research budget", () => {
     expect(reusable(base, now)).toBe(true);
     expect(reusable({ ...base, analyzedAt: "2026-09-29T23:59:00.000Z" }, now)).toBe(false);
     expect(reusable({ ...base, score: 0 }, now)).toBe(false);
+    expect(reusable({ ...base, score: 0, researchCompletion: { attempted: true } } as ResearchRun, now)).toBe(true);
     expect(reusable({ ...base, dataMode: "demo" } as ResearchRun, now)).toBe(false);
     expect(reusable(undefined, now)).toBe(false);
   });

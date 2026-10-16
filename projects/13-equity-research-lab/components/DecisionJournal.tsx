@@ -1,10 +1,11 @@
 'use client';
+import { PrivatePortfolio } from './PortfolioPrivacy';
 import { useEffect, useState } from 'react';
 import { addJournal, gradeEntry, loadJournal, removeJournal, type JournalEntry } from '@/lib/journal';
 import { loadChecks } from '@/lib/watchlist';
 import type { QuickCheck } from '@/lib/quick-check';
 
-export function DecisionJournal({ suggestions = {} }: { suggestions?: Record<string, string> }) {
+function DecisionJournalContent({ suggestions = {} }: { suggestions?: Record<string, string> }) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [checks, setChecks] = useState<Record<string, QuickCheck>>({});
   const [f, setF] = useState({ symbol: '', action: 'Bought' as JournalEntry['action'], price: '', amount: '', reason: '' });
@@ -37,3 +38,5 @@ export function DecisionJournal({ suggestions = {} }: { suggestions?: Record<str
     </>}
   </section>;
 }
+
+export function DecisionJournal(props: Parameters<typeof DecisionJournalContent>[0] = {}) { return <PrivatePortfolio><DecisionJournalContent {...props} /></PrivatePortfolio>; }

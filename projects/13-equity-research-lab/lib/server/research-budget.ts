@@ -58,7 +58,7 @@ export async function researchBudget(): Promise<BudgetStatus> {
 export function reusable(run: ResearchRun | undefined, now = new Date()): run is ResearchRun {
   // Reuse a same-day report only if the AI synthesis completed (investment case present, or a
   // legacy score). Failed runs may be retried; "research incomplete" results are still reused.
-  return !!run && run.dataMode !== "demo" && run.analyzedAt >= utcDayStart(now) && (!!run.investmentCase || run.score > 0);
+  return !!run && run.dataMode !== "demo" && run.analyzedAt >= utcDayStart(now) && (!!run.investmentCase || run.score > 0 || !!run.researchCompletion?.attempted);
 }
 
 /** Latest completed report for this ticker from today (UTC), owner-scoped. */

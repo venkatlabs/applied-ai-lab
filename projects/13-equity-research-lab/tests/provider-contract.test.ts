@@ -37,3 +37,11 @@ it('rejects an invented review date basis', async () => {
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ output_text: JSON.stringify({ ...response('Unknown'), thesisReview: { checks: [{ question: 'Cash?', observation: '', reviewCondition: '', evidenceDate: '', sources: [], reviewBy: '', dateBasis: 'Guaranteed' }], gaps: [] } }) }) })));
   await expect(new OpenAIResearchProvider().synthesize({})).rejects.toThrow();
 });
+
+it('requests five scenario cases in the existing synthesis without a separate paid call', async () => {
+ vi.stubEnv('OPENAI_API_KEY','test');
+ const scenarioDistribution={basis:'Unavailable',weightReason:'',gaps:['Diluted shares and a suitable model'],cases:[]};
+ const fetch=vi.fn(async()=>({ok:true,json:async()=>({output_text:JSON.stringify({...response('Unknown'),scenarioDistribution})})}));vi.stubGlobal('fetch',fetch);
+ const result=await new OpenAIResearchProvider().synthesize({});expect(result.scenarioDistribution).toEqual(scenarioDistribution);expect(fetch).toHaveBeenCalledTimes(1);
+ const body=JSON.parse((fetch.mock.calls[0] as unknown as [string,{body:string}])[1].body);expect(body.text.format.schema.required).toContain('scenarioDistribution');expect(JSON.stringify(body.input)).toContain('This scenario model never changes');
+});

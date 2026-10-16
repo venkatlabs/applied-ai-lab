@@ -1,4 +1,5 @@
 import type { ThesisReview } from "./thesis-review";
+import type { CurrentAffairs } from "./current-affairs";
 export type ScoreKey =
   | "businessQuality"
   | "financialPerformance"
@@ -70,6 +71,8 @@ export type OptionIdea = {
 export type ExecutiveSummary = { overview: string; strength: string; concern: string; watchFor: string };
 
 export type ResearchRun = {
+  scenarioDistribution?: import("./scenario-distribution").Distribution;
+  researchCompletion?: import("./research-completion").ResearchCompletion;
   peerValuation?: import("./peer-valuation").PeerValuation;
   evidenceAssessment?: {score:number;label:string;explanation:string;gaps:string[]};
   cost?: import("./cost-types").ReportCost;
@@ -111,6 +114,7 @@ export type ResearchRun = {
   scenarios: Scenario[];
   thesisKillers: string[];
   thesisReview?: ThesisReview;
+  currentAffairs?: CurrentAffairs;
   optionIdeas: OptionIdea[];
   benchmark: string;
   expectedReturn12m: { low: number; high: number };

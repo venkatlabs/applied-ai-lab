@@ -3,7 +3,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export function TickerSearch() {
-  const [ticker, setTicker] = useState("NVDA");
+  const [ticker, setTicker] = useState("");
   const router = useRouter();
   const [error, setError] = useState("");
   function submit(e: FormEvent) {
@@ -16,7 +16,7 @@ export function TickerSearch() {
   return (
     <form className="ticker-search" onSubmit={submit}>
       <input aria-label="Ticker symbol" value={ticker} onChange={(e) => setTicker(e.target.value)} placeholder="AAPL" />
-      <button type="submit">Run research</button>
+      <button type="submit">Review stock</button>
       {error && <p role="alert">{error}</p>}
     </form>
   );

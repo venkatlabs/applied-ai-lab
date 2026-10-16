@@ -43,6 +43,13 @@ function newest(candidates: FactUnit[]) {
   })[0];
 }
 
+/** USD balance-sheet facts from domestic and foreign SEC filings. */
+export function latestInstantFact(fact: any): FactUnit | undefined {
+  return newest(((fact?.units?.USD ?? []) as FactUnit[]).filter(x =>
+    ['10-K', '10-Q', '10-K/A', '10-Q/A', '20-F', '20-F/A', '40-F', '40-F/A', '6-K'].includes(x.form ?? '') &&
+    !x.start && x.end && x.filed && typeof x.val === 'number' && Number.isFinite(x.val)));
+}
+
 function latestAnnualAcross(...facts: any[]): FactUnit | undefined {
   return newest(facts.flatMap(annualCandidates));
 }
@@ -104,9 +111,9 @@ export class SecProvider implements FundamentalsProvider {
     const submissions = submissionsRes.ok ? await submissionsRes.json() : null;
     const gaap = data?.facts?.["us-gaap"] ?? {};
 
-    const equity = newest((gaap.StockholdersEquity?.units?.USD ?? []).filter((x:FactUnit)=>["10-K","10-Q"].includes(x.form??"") && !x.start && x.end && x.filed && typeof x.val==="number"));
+    const equity = latestInstantFact(gaap.StockholdersEquity);
     // Balance sheet (instant facts). Every component must share one balance-sheet date.
-    const instant = (fact: any) => newest(((fact?.units?.USD ?? []) as FactUnit[]).filter(x => ["10-K", "10-Q", "10-K/A", "10-Q/A"].includes(x.form ?? "") && !x.start && x.end && x.filed && typeof x.val === "number"));
+    const instant = latestInstantFact;
     const cashFactBs = instant(gaap.CashAndCashEquivalentsAtCarryingValue) ?? instant(gaap.CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents);
     const bsDate = cashFactBs?.end;
     const onDate = (fact: any) => { const f = instant(fact); return f && f.end === bsDate ? f.val : undefined; };

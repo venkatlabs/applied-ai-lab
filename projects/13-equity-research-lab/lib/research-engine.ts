@@ -1,3 +1,7 @@
+import { buildDistribution } from "./scenario-distribution";
+import { completionState } from './research-completion';
+import { researchGaps } from './server/web-research';
+import { validateCurrentAffairs } from "./current-affairs";
 import { validateThesisReview, researchQuestions } from "./thesis-review";
 import { peerResearch } from "./server/peer-research";
 import { assessDecisionEvidence } from "./decision-evidence";
@@ -23,7 +27,7 @@ const EMPTY_SCORES: ResearchScores = {
 function liveShell(ticker: string): ResearchRun {
   return {
     id: crypto.randomUUID(), ticker, companyName: ticker, analyzedAt: new Date().toISOString(),
-    asOfPrice: 0, dataMode: "hybrid", skillVersion: "equity-research-v0.13.0",
+    asOfPrice: 0, dataMode: "hybrid", skillVersion: "equity-research-v0.15.0",
     score: 0, confidence: 0, verdict: "Insufficient data", scores: { ...EMPTY_SCORES },
     highlights: [], risks: [], catalysts: [], managementCredibility: [],
     expectationGap: "Awaiting sufficient live evidence.", valuationSummary: "No valuation conclusion yet.",
@@ -60,11 +64,11 @@ function dimensionCoverage(args: {
 }
 
 
-export async function runResearch(tickerRaw: string): Promise<ResearchRun> {
-  const {value,cost}=await withCosts(()=>research(tickerRaw));
+export async function runResearch(tickerRaw: string, focus?: string[]): Promise<ResearchRun> {
+  const {value,cost}=await withCosts(async()=>{ const result = await research(tickerRaw, focus); result.researchCompletion = completionState({...result, researchCompletion: {attempted: !!focus} as ResearchRun["researchCompletion"]}); return result; });
   return {...value,cost};
 }
-async function research(tickerRaw: string): Promise<ResearchRun> {
+async function research(tickerRaw: string, focus?: string[]): Promise<ResearchRun> {
   const ticker = tickerRaw.trim().toUpperCase();
   if (!/^[A-Z.\-]{1,10}$/.test(ticker)) throw new Error("Invalid ticker symbol");
   if (process.env.NEXT_PUBLIC_APP_MODE !== "live") return demoResearch(ticker);
@@ -131,11 +135,11 @@ async function research(tickerRaw: string): Promise<ResearchRun> {
 
   const peerWork=peerResearch(ticker,fundamentals,market,run.analyzedAt).catch(()=>undefined);
   try {
-    run.integratedResearch = await integratedResearch(run);
+    run.integratedResearch = focus ? await researchGaps(run, true, focus) : await integratedResearch(run);
     for (const source of run.integratedResearch.citations) {
       if (!citations.some(c => c.url === source.url)) citations.push({ title: source.title, url: source.url, source: "Web research", retrievedAt: run.integratedResearch.generatedAt, tier: 3 });
     }
-  } catch { errors.push("Automatic web research did not complete. Unsupported investment factors remain unknown; retry a new report to deepen the evidence."); }
+  } catch { errors.push(focus ? "The targeted evidence follow-up did not complete. Unsupported factors remain unknown; automatic attempts have stopped." : "Automatic web research did not complete. Unsupported investment factors remain unknown."); }
 
   run.peerValuation=await peerWork;
   for(const row of run.peerValuation?.rows??[])for(const c of row.sources)if(!citations.some(x=>x.url===c.url))citations.push(c);
@@ -236,6 +240,7 @@ async function research(tickerRaw: string): Promise<ResearchRun> {
     // One scoring model: the six-factor investment score (0 when evidence is insufficient).
     run.score = decision.score ?? 0;
     run.verdict = !decision.available ? "Insufficient data" : decision.action === "Buy candidate" ? "Buy candidate" : decision.action === "Avoid / review selling" ? "Avoid for now" : "Watch";
+    run.scenarioDistribution = buildDistribution(ai.scenarioDistribution, citations, run.analyzedAt);
     run.executiveSummary = ai.executiveSummary;
     run.highlights = ai.highlights;
     run.risks = ai.risks;
@@ -246,6 +251,7 @@ async function research(tickerRaw: string): Promise<ResearchRun> {
     run.analystSummary = ai.analystSummary;
     run.thesisKillers = ai.thesisKillers;
     if (ai.thesisReview) run.thesisReview = validateThesisReview(ai.thesisReview, citations, run.analyzedAt);
+    if (ai.currentAffairs) run.currentAffairs = validateCurrentAffairs(ai.currentAffairs, citations, run.analyzedAt);
     run.optionIdeas = []; // No live options chain; do not assign unsupported strategy fit.
     run.benchmark = "SPY";
     run.analysts = (analystData?.calls ?? []) as AnalystCall[];

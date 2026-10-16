@@ -34,3 +34,22 @@ describe('connected portfolio bridge', () => {
     expect(() => connectedHoldings({ ...snapshot, accounts: [{ ...snapshot.accounts[0], reportedTotal: { amount: 100, currency: 'CAD' } }] })).toThrow('positive USD brokerage total');
   });
 });
+
+import { selectConnectedAccounts } from '../lib/connected-portfolio';
+it('isolates a selected account and preserves retrieval and provider timestamps', () => {
+  const selected = selectConnectedAccounts(snapshot, '1')!;
+  expect(selected.retrievedAt).toBe(snapshot.retrievedAt);
+  expect(selected.accounts[0].lastHoldingsSync).toBe(snapshot.accounts[1].lastHoldingsSync);
+  const result = connectedHoldings(selected).holdings;
+  expect(result.totalValue).toBe(2000);
+  expect(result.cashAvailable).toBe(50);
+  expect(result.scope).toBe('Robinhood · IRA');
+  expect(result.positions.find(p => p.symbol === 'AMZN')?.shares).toBe(3);
+  expect(snapshot.accounts).toHaveLength(2);
+});
+it('keeps all accounts selectable and rejects an unavailable account', () => {
+  expect(selectConnectedAccounts(snapshot, 'all')).toBe(snapshot);
+  expect(selectConnectedAccounts(null, 'all')).toBeNull();
+  expect(() => selectConnectedAccounts(snapshot, '2')).toThrow('Choose an account');
+  expect(() => selectConnectedAccounts(snapshot, '-1')).toThrow('Choose an account');
+});

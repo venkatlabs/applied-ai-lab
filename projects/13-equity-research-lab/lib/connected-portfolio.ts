@@ -67,7 +67,7 @@ export function connectedHoldings(snapshot: ConnectedSnapshot): ConnectedHolding
   }
   const date = snapshot.retrievedAt.slice(0, 10);
   const holdings: Holdings = {
-    version: 1, scope: `Connected Fidelity + Robinhood (${snapshot.accounts.length} accounts)`,
+    version: 1, scope: snapshot.accounts.length === 1 ? `${snapshot.accounts[0].institution} · ${snapshot.accounts[0].name ?? "Selected account"}` : `Connected ${[...new Set(snapshot.accounts.map(a => a.institution))].join(" + ")} (${snapshot.accounts.length} accounts)`,
     asOf: date, coverage: partial ? "partial" : "complete", totalValue, cashAvailable,
     positions: normalized,
   };
@@ -77,4 +77,12 @@ export function connectedHoldings(snapshot: ConnectedSnapshot): ConnectedHolding
 function money(value: number | string | null | undefined): number | null {
   const parsed = typeof value === "string" && value.trim() ? Number(value) : value;
   return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : null;
+}
+
+/** Scope the shared tab snapshot without changing its original refresh or provider dates. */
+export function selectConnectedAccounts(snapshot: ConnectedSnapshot | null, selection: string): ConnectedSnapshot | null {
+  if (!snapshot || selection === 'all') return snapshot;
+  const index = Number(selection);
+  if (!/^\d+$/.test(selection) || !Number.isInteger(index) || !snapshot.accounts[index]) throw new Error('Choose an account from this refresh.');
+  return { ...snapshot, accounts: [snapshot.accounts[index]] };
 }

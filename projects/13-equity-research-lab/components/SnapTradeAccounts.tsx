@@ -1,36 +1,18 @@
 'use client';
+import { PrivatePortfolio } from './PortfolioPrivacy';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { accountAttention } from '@/lib/account-attention';
 import { usePortfolioSession } from './PortfolioSession';
 import type { ConnectedSnapshot } from '@/lib/connected-portfolio';
 
-export function SnapTradeAccounts() {
-  const { snapshot, setSnapshot } = usePortfolioSession();
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
-
-  async function refresh() {
-    setBusy(true); setMessage('');
-    try {
-      const response = await fetch('/api/snaptrade', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}), cache: 'no-store',
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || 'Could not refresh connected accounts.');
-      setSnapshot(body as ConnectedSnapshot);
-      setMessage('Account data refreshed. No research or trades were run.');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not refresh connected accounts.');
-    } finally { setBusy(false); }
-  }
+function SnapTradeAccountsContent() {
+  const { allAccounts: snapshot, refreshAccounts, refreshing: busy, refreshError } = usePortfolioSession();
 
   return <section className="panel">
     <p>Refresh is manual. This page reads account types, reported totals, cash, holdings and update dates from SnapTrade. It makes no AI research calls and does not place trades. Keep the Vercel login gate enabled.</p>
-    <button onClick={() => void refresh()} disabled={busy}>{busy ? 'Reading connected accounts…' : 'Refresh Fidelity and Robinhood'}</button>
-    <p role="status">{message}</p>
+    <button onClick={() => void refreshAccounts()} disabled={busy}>{busy ? 'Reading connected accounts…' : 'Refresh Fidelity and Robinhood'}</button>
+    <p role="status">{refreshError}</p>
     {!snapshot && <p className="muted">Your financial data stays off this page until you press refresh. It is held in this tab only and clears when you leave or reload.</p>}
     {snapshot && <>
       <p className="muted">Retrieved {dateTime(snapshot.retrievedAt)} · {snapshot.accounts.length} accounts shown · {snapshot.excludedAccountCount} accounts at other institutions skipped</p>
@@ -38,7 +20,7 @@ export function SnapTradeAccounts() {
       {snapshot.accounts.length > 0 && <section className="panel">
         <h2>Continue with this refresh</h2>
         <p>The same in-memory account data is now available across these tools in this tab. It clears when you reload or close the tab.</p>
-        <div className="button-row"><Link className="action" href="/holdings">Open My holdings</Link><Link className="action secondary" href="/portfolio">Compare in Portfolio Lab</Link><Link className="action secondary" href="/amzn">Diversify a holding</Link></div>
+        <div className="button-row"><Link className="action" href="/">Return to your portfolio</Link><Link className="action secondary" href="/holdings">Manage snapshot or import holdings</Link></div>
       </section>}
       {snapshot.accounts.length > 0 && <section className="panel">
         <h2>What may need attention</h2>
@@ -95,3 +77,5 @@ function dateTime(value: string | null | undefined) {
   if (!value || !Number.isFinite(Date.parse(value))) return 'Unavailable';
   return new Date(value).toLocaleString();
 }
+
+export function SnapTradeAccounts() { return <PrivatePortfolio><SnapTradeAccountsContent /></PrivatePortfolio>; }

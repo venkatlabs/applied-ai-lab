@@ -7,3 +7,25 @@
 
 .score-reference{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}.score-reference span{padding:12px;border:1px solid #35515d;border-radius:8px;font-size:.85rem}.button-row{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}label{display:flex;flex-direction:column;gap:6px}input,select{max-width:100%;min-width:0}pre{overflow:auto;max-width:100%}.input-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin:16px 0}.nav nav{flex-wrap:wrap}.scenario-grid>*{min-width:0}@media(max-width:650px){.score-reference{grid-template-columns:1fr 1fr}.nav{align-items:flex-start;gap:12px}.nav nav{gap:12px}.input-grid{grid-template-columns:1fr}.hero h1{font-size:2.5rem}}
 .panel button{background:#a8eed4;color:#102a24;border:1px solid #86ceb5;border-radius:9px;padding:10px 15px;font:inherit;font-weight:600;cursor:pointer}.panel button:hover{background:#c9f8e5}.panel button:disabled{opacity:.6;cursor:wait}.panel button:focus-visible{outline:3px solid #fff;outline-offset:3px}.panel table th{white-space:normal;min-width:110px}.panel table td{white-space:normal}.panel figure{margin:12px 0}.portfolio-chart svg{width:100%;height:auto}
+
+/* Portfolio-first navigation and compact decision rows. */
+.nav a[aria-current=page]{color:var(--text);font-weight:700;border-bottom:2px solid var(--accent)}
+.nav .settings-link{font-size:.9rem}.portfolio-home .hero{margin-bottom:28px}.portfolio-home h1{font-size:clamp(2rem,4vw,3.5rem);line-height:1.1}.portfolio-home>.panel{margin-top:24px}.portfolio-source{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.portfolio-source p{margin:12px 0}.portfolio-total{font-size:2.3rem}.portfolio-mix{display:flex;height:14px;background:var(--line);border-radius:8px;overflow:hidden;margin:20px 0}.portfolio-mix span:nth-child(1){background:var(--accent)}.portfolio-mix span:nth-child(2){background:#789dad}.portfolio-mix span:nth-child(3){background:#d1dce1}.portfolio-limit{margin-top:24px}.portfolio-limit input{max-width:130px}.holding-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;border-top:1px solid var(--line);padding:18px 0}.holding-row h3{margin:0 0 8px}.holding-row small{font-weight:400;color:var(--muted);display:block}.holding-row p{margin:8px 0;max-width:720px}.holding-row .button-row{align-content:center;align-items:center;margin:0}.action{text-decoration:none;display:inline-block}.activity-tabs [aria-selected=true]{border-color:var(--accent);color:var(--accent)}
+@media(max-width:650px){.nav{flex-direction:column;padding:16px}.nav nav{width:100%;justify-content:space-between;gap:12px}main{padding:28px 16px 60px}.portfolio-home .panel{padding:18px}.holding-row{grid-template-columns:1fr;gap:8px}.holding-row .button-row{flex-wrap:wrap}.portfolio-home .ticker-search{margin-top:16px}.activity-tabs button{flex:1 1 130px}}
+
+.privacy-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 24px}.privacy-toolbar p{margin:0;color:var(--muted);font-size:.9rem}.private-portfolio-details[hidden]{display:none!important}.privacy-placeholder{margin:20px 0}@media(max-width:650px){.privacy-toolbar{justify-content:space-between}.privacy-toolbar .action{padding:10px}}
+
+/* v0.15.0 decision header, score breakdown, current affairs */
+.decision-header{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr auto;gap:.4rem 1rem;align-items:center;padding:.75rem 1rem;margin:0 0 1rem;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.dh-main{display:flex;gap:.75rem;align-items:baseline;flex-wrap:wrap}
+.dh-ticker{font-weight:700;color:var(--accent)}
+.dh-action{font-size:1.15rem}
+.dh-score{font-size:1.6rem;font-weight:700;text-align:right}
+.dh-facts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.25rem 1.5rem;margin:0}
+.dh-facts div{display:flex;gap:.4rem}.dh-facts dt{opacity:.7}.dh-facts dd{margin:0}
+.dh-reason{grid-column:1/-1;margin:0;opacity:.85}
+.table-scroll{overflow-x:auto}
+table.breakdown{width:100%;border-collapse:collapse;min-width:520px}
+table.breakdown th,table.breakdown td{padding:.4rem .5rem;border-bottom:1px solid var(--line);text-align:left}
+.event-card.stale{opacity:.75}
+@media (max-width:650px){.decision-header{position:static;grid-template-columns:1fr;padding:.75rem}.dh-score{text-align:left}.dh-facts{flex-direction:column}}

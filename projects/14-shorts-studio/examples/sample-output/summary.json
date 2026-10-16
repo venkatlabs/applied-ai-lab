@@ -1,0 +1,44 @@
+[
+  {
+    "id": "ep01-baby-ceo",
+    "title": "When HR says 'hostile work environment' 📉",
+    "score": 100,
+    "ready": true,
+    "blockers": []
+  },
+  {
+    "id": "ep02-quarterly-review",
+    "title": "Quarterly review be like 🏢",
+    "score": 100,
+    "ready": true,
+    "blockers": []
+  },
+  {
+    "id": "ep03-this-could-have-been-an-email",
+    "title": "Every meeting ever 🗓️",
+    "score": 100,
+    "ready": true,
+    "blockers": []
+  },
+  {
+    "id": "ep04-interview",
+    "title": "Job interviews, honestly 🎤",
+    "score": 100,
+    "ready": true,
+    "blockers": []
+  },
+  {
+    "id": "ep05-raise",
+    "title": "Asking for a raise 💸",
+    "score": 100,
+    "ready": true,
+    "blockers": []
+  },
+  {
+    "id": "ep06-friday-afternoon",
+    "title": "Friday at 4:59 PM 🎉",
+    "score": 100,
+    "ready": true,
+    "blockers": []
+  }
+]
