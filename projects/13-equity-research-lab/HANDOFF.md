@@ -74,6 +74,11 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Log
 
+### 2026-10-09 — Claude: Supabase hardening (branch `claude/supabase-rls-001-init`, PR open)
+- Migration `005_lock_legacy_001_tables.sql` enables RLS (no policies) and revokes anon/authenticated on `research_runs`, `claims`, `retrospective_results` (unused by app code; not dropped, no data loss). Guard test `tests/migrations-rls.test.ts` fails if a new public table lacks RLS. 207 tests, tsc and build pass.
+- Identity/recovery design note: all reads/writes use the server-only service-role key, so RLS is defence in depth and the app is the only access control. Snapshots are keyed by `owner_hash` derived from the anonymous workspace cookie; clearing the cookie orphans the archive and there is no recovery path. Recommended: the owner-auth work in PR #11, then an owner-keyed export/restore of `equity_snapshots`; later scope a narrower DB role than service-role for read-only routes.
+- Not applied to the live database; Venkat applies after merge. Notion card stays open until merged and applied.
+
 ### 2026-10-08 — Codex: five-case research view (PR #15)
 - Adapted IONS, XENE, FRMI, FRVO and Corteva chat structure: clear rating/decision, scenario distribution, operating drivers, downside, timing and change conditions. Chat market facts were not imported; arithmetic inconsistencies informed deterministic regression tests.
 - Five-case sourced starting facts plus explicit forecast assumptions, code-computed prices/returns/weighted outcomes, provenance/date/weight guards. Free local scenario explorer does not change archived ratings. Existing DCF remains separate; unsupported models remain gaps.
