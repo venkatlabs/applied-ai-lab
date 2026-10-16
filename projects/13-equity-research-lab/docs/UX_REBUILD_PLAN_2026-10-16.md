@@ -42,3 +42,8 @@ Each phase ships behind passing tsc, tests and build, with HANDOFF/Notion update
 ## Not changing
 
 Six-factor weights and thresholds, source-membership checks, citation validation, immutable snapshots, the daily cap, server-only secrets. Verdicts are research outputs, not personalized advice.
+
+## Status
+- A merged (PR #30). B–E built in the follow-up PR: `lib/outcome.ts`, `lib/stock-list.ts`, `components/MyStocks.tsx`, `components/StockHistory.tsx`, `components/ResearchCalls.tsx`, migration `007_followed_stocks.sql`.
+- Needs owner action: Google OAuth client + Vercel env vars; run migrations 006 and 007 in Supabase.
+- Later ideas: shared journal storage on the account, scheduled monthly refresh of holdings, richer discovery.

@@ -4,7 +4,7 @@
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
 **Current holder:** none. Five-case research PR #15 merged as `94360fc` (code `0dbe5d3`). Claude owner-auth PR #11 (updated against main 2026-10-16) is awaiting Venkat's OWNER_ACCESS_KEY setup and merge.
-**Last updated:** 2026-10-16 by Claude. P0 of the Contextual Decision spec (v0.15.0) merged via PR #28 as `1290bd1`; 214 tests, tsc, build and CI pass. P1–P3 not authorized. See `docs/CURRENT_AFFAIRS_P0_2026-10-16.md`. Unverified: live deployment and real model output (needs one capped real report).
+**Last updated:** 2026-10-16 by Claude. UX rebuild (Venkat's feedback): phase A Google sign-in + account-owned history merged (PR #30); phases B–E (conclusive outcome, My stocks home, holdings research queue, auto research calls) in the follow-up PR. Plan: `docs/UX_REBUILD_PLAN_2026-10-16.md`. Setup for sign-in: `docs/GOOGLE_SIGNIN_SETUP.md`. Unverified: real Google sign-in, migrations 006/007 on the live database, live research with the new outcome.
 **Prior update:** 2026-10-08 by Codex
 **Main baseline:** `94360fc` (five-case outlook atop connected-first holdings).
 **Latest feature commits:** `0dbe5d3` / merge `94360fc` (five-case outlook); `69a1965` / merge `2e9a1b9` (browser feedback).
@@ -75,6 +75,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-16 Claude: UX rebuild. Google OIDC sign-in with email allowlist (env: GOOGLE_CLIENT_ID/SECRET, AUTH_SECRET, OWNER_EMAILS; unset = old behavior), archive owned by account + legacy workspace claim (migration 006), followed stocks on the account (migration 007), research outcome (verdict + confidence, never 'no answer'), My stocks home with batch research of unresearched holdings (confirm + budget cap), per-stock history, automatic research calls journal. Owner-key flow kept only as fallback when Google sign-in is not configured.
 
 - 2026-10-16 Claude: built P0 (current-affairs evidence cards with citation/date validation, score breakdown, responsive decision header), engine v0.15.0, no extra paid call. PR #28 merged as `1290bd1`. Holder released.
 
