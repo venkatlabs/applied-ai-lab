@@ -1,4 +1,4 @@
-import { singleInvestmentDecision } from "./investment";
+import { researchOutcome } from "./outcome";
 import type { ResearchRun } from "./types";
 
 // Zero-cost retrospective: grades each frozen report against the verified price in a
@@ -16,7 +16,7 @@ export type Outcome = {
   verdictCorrect: boolean | null;
 };
 
-const directional = (action: string) => action === "Buy candidate" ? 1 : action === "Avoid / review selling" ? -1 : 0;
+const directional = (action: string) => action === "Buy / Add" ? 1 : action === "Trim" || action === "Sell / Avoid" ? -1 : 0;
 
 export function outcomes(runs: ResearchRun[]): Outcome[] {
   const byTicker = new Map<string, ResearchRun[]>();
@@ -25,7 +25,7 @@ export function outcomes(runs: ResearchRun[]): Outcome[] {
   for (const [ticker, list] of byTicker) {
     const sorted = [...list].sort((a, b) => a.analyzedAt.localeCompare(b.analyzedAt));
     for (const [i, early] of sorted.entries()) {
-      const decision = singleInvestmentDecision(early);
+      const decision = researchOutcome(early, new Date(early.analyzedAt)); const call = decision.verdict;
       const t0 = Date.parse(early.marketAsOf ?? early.analyzedAt);
       for (const horizon of HORIZONS) {
         // Closest later report within ±25% of the horizon.
@@ -35,10 +35,10 @@ export function outcomes(runs: ResearchRun[]): Outcome[] {
         const hit = candidates[0];
         if (!hit) continue;
         const ret = (hit.l.asOfPrice / early.asOfPrice - 1) * 100;
-        const dir = directional(decision.action);
+        const dir = directional(call);
         const iv = early.intrinsicValuation?.available ? early.intrinsicValuation.perShare.base : undefined;
         out.push({
-          ticker, reportId: early.id, analyzedAt: early.analyzedAt, action: decision.action, score: decision.score,
+          ticker, reportId: early.id, analyzedAt: early.analyzedAt, action: call, score: decision.score,
           horizon, laterId: hit.l.id, laterAt: hit.l.analyzedAt, days: Math.round(hit.days), priceReturnPct: Number(ret.toFixed(2)),
           intrinsicBase: iv,
           movedTowardIntrinsic: iv === undefined ? undefined : Math.abs(hit.l.asOfPrice - iv) < Math.abs(early.asOfPrice - iv),
