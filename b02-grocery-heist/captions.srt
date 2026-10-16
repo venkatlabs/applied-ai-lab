@@ -1,11 +1,31 @@
 1
-00:00:00,400 --> 00:00:09,171
-Phase one: distraction. Mom is reading ingredients.
+00:00:00,000 --> 00:00:02,220
+Phase one:
 
 2
-00:00:09,171 --> 00:00:17,941
-Phase two: conceal. Say nothing. Look adorable.
+00:00:02,720 --> 00:00:03,420
+distraction.
 
 3
-00:00:17,941 --> 00:00:21,700
+00:00:04,320 --> 00:00:05,520
+Mom is reading ingredients.
+
+4
+00:00:06,250 --> 00:00:07,970
+Phase two:
+
+5
+00:00:08,730 --> 00:00:09,430
+conceal.
+
+6
+00:00:10,290 --> 00:00:10,990
+Say nothing.
+
+7
+00:00:11,270 --> 00:00:11,970
+Look adorable.
+
+8
+00:00:12,500 --> 00:00:14,060
 I regret nothing.

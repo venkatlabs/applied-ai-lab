@@ -127,8 +127,24 @@
       "topic": "Not now. Meetings."
     },
     "b02-grocery-heist": {
-      "status": "planned",
-      "history": [],
+      "status": "pending_review",
+      "history": [
+        {
+          "status": "rendered",
+          "at": "2026-10-16T14:46:38+00:00",
+          "note": "~$3.3"
+        },
+        {
+          "status": "captioned",
+          "at": "2026-10-16T14:46:48+00:00",
+          "note": ""
+        },
+        {
+          "status": "pending_review",
+          "at": "2026-10-16T14:46:48+00:00",
+          "note": ""
+        }
+      ],
       "title": "Phase one: distraction 😂",
       "episode": 6,
       "score": 100,
@@ -207,8 +223,8 @@
       "topic": "That is my toy"
     }
   },
-  "spend_usd": 4.2,
+  "spend_usd": 7.5,
   "spend_by_month": {
-    "2026-10": 4.2
+    "2026-10": 7.5
   }
 }

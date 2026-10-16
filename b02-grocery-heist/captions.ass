@@ -9,6 +9,11 @@ Style: Default,Arial,84,&H0000FFFF,&H00000000,&H64000000,1,1,6,2,2,60,60,420
 
 [Events]
 Format: Layer,Start,End,Style,Text
-Dialogue: 0,0:00:00.40,0:00:09.17,Default,Phase one: distraction. Mom is reading ingredients.
-Dialogue: 0,0:00:09.17,0:00:17.94,Default,Phase two: conceal. Say nothing. Look adorable.
-Dialogue: 0,0:00:17.94,0:00:21.70,Default,I regret nothing.
+Dialogue: 0,0:00:00.00,0:00:02.22,Default,Phase one:
+Dialogue: 0,0:00:02.72,0:00:03.42,Default,distraction.
+Dialogue: 0,0:00:04.32,0:00:05.52,Default,Mom is reading ingredients.
+Dialogue: 0,0:00:06.25,0:00:07.97,Default,Phase two:
+Dialogue: 0,0:00:08.73,0:00:09.43,Default,conceal.
+Dialogue: 0,0:00:10.29,0:00:10.99,Default,Say nothing.
+Dialogue: 0,0:00:11.27,0:00:11.97,Default,Look adorable.
+Dialogue: 0,0:00:12.50,0:00:14.06,Default,I regret nothing.

@@ -1,0 +1,31 @@
+{
+  "timing": "words",
+  "window": [
+    0.0,
+    1.56
+  ],
+  "words": [
+    {
+      "word": "I",
+      "start": 0.0,
+      "end": 0.54
+    },
+    {
+      "word": "regret",
+      "start": 0.54,
+      "end": 0.88
+    },
+    {
+      "word": "nothing.",
+      "start": 0.88,
+      "end": 1.56
+    }
+  ],
+  "cues": [
+    [
+      0.0,
+      1.56,
+      "I regret nothing."
+    ]
+  ]
+}
