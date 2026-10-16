@@ -1,0 +1,65 @@
+name: shorts-upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      episode_ids:
+        description: "Episode ids to approve and upload to YouTube (space separated), e.g. b01-nap-negotiation b02-grocery-heist"
+        required: true
+      execute:
+        description: "Really upload (off = dry run showing the schedule)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shorts-studio
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: projects/14-shorts-studio
+    env:
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load state from the studio-data branch
+        run: |
+          git config user.name "shorts-studio[bot]"
+          git config user.email "shorts-studio@users.noreply.github.com"
+          git fetch origin studio-data
+          git worktree add -B studio-data out FETCH_HEAD
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install google-api-python-client google-auth-oauthlib
+      - name: Approve (you started this run, so that is your approval) and upload
+        env:
+          EPISODE_IDS: ${{ inputs.episode_ids }}
+          EXECUTE: ${{ inputs.execute }}
+        run: |
+          if ! printf '%s' "$EPISODE_IDS" | grep -Eq '^[A-Za-z0-9_-]+( [A-Za-z0-9_-]+)*$'; then
+            echo "::error::episode_ids must be space-separated ids (letters, digits, - and _)."; exit 1
+          fi
+          if [ "$EXECUTE" = "true" ]; then
+            python3 -m app approve $EPISODE_IDS
+            python3 -m app publish-approved --only $EPISODE_IDS --execute
+          else
+            echo "Dry run: nothing is approved or uploaded. Check the ids exist, then re-run with execute on."
+            python3 -m app review || true
+          fi
+      - name: Save state to the studio-data branch
+        if: ${{ !cancelled() }}
+        working-directory: projects/14-shorts-studio/out
+        run: |
+          git add -A
+          git diff --cached --quiet && echo "Nothing new to save." || git commit -m "shorts-studio: upload $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push origin studio-data

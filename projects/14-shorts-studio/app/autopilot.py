@@ -208,16 +208,18 @@ def review_queue(out):
 def decide(out, ids, approve, note=""):
     state = State(Path(out) / "state.json")
     for ep_id in ids:
+        if approve and state.data["episodes"].get(ep_id, {}).get("status") == "approved":
+            continue  # already approved: re-running is harmless
         state.set_status(ep_id, "approved" if approve else "rejected", note)
     state.save()
 
 
-def publish_approved(out, upload, execute, channel_path=None, log=print):
+def publish_approved(out, upload, execute, channel_path=None, log=print, only=None):
     from .config import load_channel as _lc
     channel = _lc(channel_path)
     out = Path(out)
     state = State(out / "state.json")
-    ids = state.with_status("approved")
+    ids = [i for i in state.with_status("approved") if not only or i in only]
     if not ids:
         log("Nothing approved.")
         return

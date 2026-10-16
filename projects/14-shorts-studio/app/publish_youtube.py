@@ -28,17 +28,26 @@ def upload(folder, pack, publish_at):
     except ImportError as error:
         raise PublishError("pip install google-api-python-client google-auth-oauthlib") from error
 
-    secrets = os.getenv("YOUTUBE_CLIENT_SECRETS")
-    if not secrets:
-        raise PublishError("Set YOUTUBE_CLIENT_SECRETS to your OAuth client JSON path.")
-    token_path = Path(os.getenv("YOUTUBE_TOKEN", ".youtube_token.json"))
-    creds = Credentials.from_authorized_user_file(str(token_path), SCOPE) if token_path.exists() else None
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            creds = InstalledAppFlow.from_client_secrets_file(secrets, SCOPE).run_local_server(port=0)
-        token_path.write_text(creds.to_json())
+    client_id = os.getenv("YOUTUBE_CLIENT_ID")
+    client_secret = os.getenv("YOUTUBE_CLIENT_SECRET")
+    refresh = os.getenv("YOUTUBE_REFRESH_TOKEN")
+    if client_id and client_secret and refresh:  # unattended path (GitHub Actions)
+        creds = Credentials(None, refresh_token=refresh, token_uri="https://oauth2.googleapis.com/token",
+                            client_id=client_id, client_secret=client_secret, scopes=SCOPE)
+        creds.refresh(Request())
+    else:
+        secrets = os.getenv("YOUTUBE_CLIENT_SECRETS")
+        if not secrets:
+            raise PublishError("Set YOUTUBE_CLIENT_ID/YOUTUBE_CLIENT_SECRET/YOUTUBE_REFRESH_TOKEN "
+                               "(or YOUTUBE_CLIENT_SECRETS for a local browser sign-in).")
+        token_path = Path(os.getenv("YOUTUBE_TOKEN", ".youtube_token.json"))
+        creds = Credentials.from_authorized_user_file(str(token_path), SCOPE) if token_path.exists() else None
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                creds = InstalledAppFlow.from_client_secrets_file(secrets, SCOPE).run_local_server(port=0)
+            token_path.write_text(creds.to_json())
 
     video = Path(folder) / "final.mp4"
     if not video.exists():
