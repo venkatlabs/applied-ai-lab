@@ -1,11 +1,13 @@
 import type { ResearchRun } from "./types";
 import { researchOutcome, latestByTicker, type Outcome } from "./outcome";
+import { hurdleView, type HurdleView } from "./hurdle";
 
 /** Pure model behind the "My stocks" home: one row per stock you own, follow or have researched. */
 export type StockRow = {
   symbol: string; companyName: string; owned: boolean; following: boolean;
   outcome: Outcome; report?: ResearchRun; reportCount: number;
   sinceCall: { movePct: number; days: number; right: boolean | null } | null;
+  hurdle: HurdleView | null;
   priority: number; action: "Research" | "Refresh" | "Open";
 };
 export type Price = { price: number; date: string };
@@ -44,7 +46,7 @@ export function buildStockRows(input: { owned: string[]; following: string[]; ru
     const isOwned = owned.has(symbol), isFollowing = following.has(symbol);
     return {
       symbol, companyName: report?.companyName ?? symbol, owned: isOwned, following: isFollowing, outcome, report, reportCount: counts.get(symbol) ?? 0,
-      sinceCall: sinceCall(report, outcome, input.prices?.[symbol]), priority: priority(isOwned, isFollowing, outcome),
+      sinceCall: sinceCall(report, outcome, input.prices?.[symbol]), hurdle: hurdleView(report, input.prices?.[symbol]), priority: priority(isOwned, isFollowing, outcome),
       action: !report || outcome.verdict === "Not researched" ? "Research" : outcome.needsRefresh ? "Refresh" : "Open",
     };
   });
