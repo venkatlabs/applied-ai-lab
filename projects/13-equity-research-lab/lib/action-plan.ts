@@ -100,6 +100,7 @@ export type StockActionSummary = {
   label: RecommendedActionLabel;
   reasons: string[];
   portfolioWeight?: number;
+  amountUsd?: number;
   roomUsd?: number;
   taxContext?: string;
   blockers: string[];
@@ -130,7 +131,8 @@ export function stockActionSummary(
           label: action.label,
           reasons: action.reasons,
           portfolioWeight: action.weight,
-          ...(action.amountUsd != null ? { roomUsd: action.label === "BUY / ADD CANDIDATE" ? action.amountUsd : undefined } : {}),
+          ...(action.amountUsd != null ? { amountUsd: action.amountUsd } : {}),
+          ...(action.amountUsd != null && action.label === "BUY / ADD CANDIDATE" ? { roomUsd: action.amountUsd } : {}),
           ...(action.taxContext ? { taxContext: action.taxContext } : {}),
           blockers: [...blockers, ...action.blockers],
           ...(whatChanges ? { whatChanges } : {}),
@@ -138,9 +140,8 @@ export function stockActionSummary(
       }
     }
 
-    const currentValue = holdings.positions.find(p => p.symbol === run.ticker)
-      ? holdings.positions.find(p => p.symbol === run.ticker)!.shares * holdings.positions.find(p => p.symbol === run.ticker)!.price
-      : 0;
+    const recorded = holdings.positions.find(p => p.symbol === run.ticker);
+    const currentValue = recorded ? recorded.shares * recorded.price : 0;
     const room = Math.max(0, limits.singleStock * holdings.totalValue - currentValue);
     reasons.push(decision.reason);
     reasons.push(`Portfolio room under the ${(limits.singleStock * 100).toFixed(0)}% single-stock planning limit is about $${Math.round(room).toLocaleString("en-US")} before overlap and taxes.`);
