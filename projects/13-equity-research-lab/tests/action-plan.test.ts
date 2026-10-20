@@ -49,6 +49,33 @@ describe('portfolio action plan', () => {
     expect(plan.blockers.join(' ')).toMatch(/partial/);
     expect(msft.blockers.join(' ')).toMatch(/Cost basis\/tax lots/);
   });
+
+  it('blocks a stale archived report from becoming a new-position buy candidate', () => {
+    const factor = { rating: 'Strong', reason: 'Synthetic evidence', sources: ['https://example.com'], evidenceDate: '2026-08-01' } as const;
+    const run = {
+      ticker: 'OLD',
+      dataMode: 'live',
+      analyzedAt: '2026-08-01T12:00:00Z',
+      marketAsOf: '2026-08-01',
+      asOfPrice: 100,
+      investmentCase: {
+        valuationBasis: 'Independent cash-flow valuation', valuationBenchmark: 'Synthetic',
+        factors: { growth: factor, cash: factor, valuation: factor, competition: factor, execution: factor, market: factor },
+        growthOutlook: 'Synthetic', strongestCounterargument: 'Synthetic', timing: 'Synthetic', changeMind: 'Synthetic',
+      },
+    } as unknown as ResearchRun;
+    const action = stockActionSummary(run, holdings, undefined, now);
+    expect(action.label).toBe('RESEARCH FIRST');
+    expect(action.blockers.join(' ')).toMatch(/older than 30 days/);
+  });
+
+  it('preserves missing-evidence blockers for an owned stock', () => {
+    const run = {
+      ticker: 'MSFT', dataMode: 'live', analyzedAt: '2026-10-20T12:00:00Z', marketAsOf: '2026-10-20', asOfPrice: 100,
+    } as unknown as ResearchRun;
+    const action = stockActionSummary(run, holdings, undefined, now);
+    expect(action.blockers.join(' ')).toMatch(/fresh report|unified investment method/);
+  });
 });
 
 describe('stock action summary', () => {
