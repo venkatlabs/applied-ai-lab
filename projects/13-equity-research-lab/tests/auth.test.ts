@@ -101,7 +101,7 @@ describe("access decision and ownership", () => {
     expect(accessDecision("/", true, false)).toBe("redirect");
     expect(accessDecision("/api/analyze", true, false)).toBe("deny");
     expect(accessDecision("/api/snaptrade", true, true)).toBe("allow");
-    for (const open of ["/signin", "/api/auth/login", "/api/auth/callback", "/robots.txt"]) expect(accessDecision(open, true, false)).toBe("allow");
+    for (const open of ["/signin", "/api/auth/login", "/api/auth/callback", "/api/cron/monitor", "/api/cron/digest", "/robots.txt"]) expect(accessDecision(open, true, false)).toBe("allow");
   });
   it("derives a stable 64-hex account hash", async () => {
     const h = await accountOwnerHash("123");

@@ -6,6 +6,7 @@ export function MainNavigation({ email }: { email?: string }) {
   const is = (...bases: string[]) => bases.some(p => p === '/' ? path === '/' : path === p || path.startsWith(p + '/'));
   const items = [
     { href: '/', label: 'My stocks', on: path === '/' || is('/company', '/holdings', '/compare', '/portfolio', '/amzn') },
+    { href: '/watch', label: 'Watch', on: is('/watch') },
     { href: '/research', label: 'Research', on: is('/research', '/performance', '/backtest', '/analysts') },
     { href: '/opportunities', label: 'Discover', on: is('/opportunities', '/watchlist') },
     { href: '/activity', label: 'Journal', on: is('/activity') },

@@ -9,6 +9,7 @@ import type { ResearchRun } from "@/lib/types";
 
 import { ExecutiveSummary } from "./ExecutiveSummary";
 import { StockHistory } from "./StockHistory";
+import { StockTriggers } from "./StockTriggers";
 import { DecisionHeader } from "./DecisionHeader";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { CurrentAffairsPanel } from "./CurrentAffairsPanel";
@@ -54,6 +55,7 @@ export function ResearchView({ run }: { run: ResearchRun }) {
     <StockHistory ticker={run.ticker} currentId={run.id} />
     <ScenarioDistribution key={run.id} run={run} />
     <ThesisReviewPanel run={run} />
+    {run.dataMode !== "demo" && <StockTriggers ticker={run.ticker} />}
     <PeerValuationPanel run={run} />
     <HoldingAdjustment ticker={run.ticker} />
     <ReportTools run={run} />

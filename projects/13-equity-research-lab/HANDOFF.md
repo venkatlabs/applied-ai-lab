@@ -4,7 +4,7 @@
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
 **Current holder:** none. Five-case research PR #15 merged as `94360fc` (code `0dbe5d3`). Claude owner-auth PR #11 (updated against main 2026-10-16) is awaiting Venkat's OWNER_ACCESS_KEY setup and merge.
-**Last updated:** 2026-10-16 by Claude. UX rebuild (Venkat's feedback): phase A Google sign-in + account-owned history merged (PR #30); phases B–E (conclusive outcome, My stocks home, holdings research queue, auto research calls) in the follow-up PR. Plan: `docs/UX_REBUILD_PLAN_2026-10-16.md`. Setup for sign-in: `docs/GOOGLE_SIGNIN_SETUP.md`. Unverified: real Google sign-in, migrations 006/007 on the live database, live research with the new outcome.
+**Last updated:** 2026-10-20 by Claude. Merged: UX rebuild (PRs #30, #31), hurdle price (#32). In the Watch PR: pre-committed triggers + goalpost log, calendar, daily monitor (cron), weekly digest, refresh-when-due. See `docs/WATCH_2026-10-20.md`. Owner setup pending: Google sign-in env vars, migrations 006, 007, 008, CRON_SECRET. Unverified live: sign-in, migrations, cron runs, new prompt on a real report.
 **Prior update:** 2026-10-08 by Codex
 **Main baseline:** `94360fc` (five-case outlook atop connected-first holdings).
 **Latest feature commits:** `0dbe5d3` / merge `94360fc` (five-case outlook); `69a1965` / merge `2e9a1b9` (browser feedback).
@@ -75,6 +75,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-20 Claude: Watch features (triggers with status and goalpost log, calendar, daily no-LLM monitor via Vercel Cron, weekly digest, capped refresh of stocks whose dated test passed). Migration 008. Needs CRON_SECRET.
 
 - 2026-10-16 Claude: UX rebuild. Google OIDC sign-in with email allowlist (env: GOOGLE_CLIENT_ID/SECRET, AUTH_SECRET, OWNER_EMAILS; unset = old behavior), archive owned by account + legacy workspace claim (migration 006), followed stocks on the account (migration 007), research outcome (verdict + confidence, never 'no answer'), My stocks home with batch research of unresearched holdings (confirm + budget cap), per-stock history, automatic research calls journal. Owner-key flow kept only as fallback when Google sign-in is not configured.
 
