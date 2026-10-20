@@ -17,6 +17,7 @@ import { InvestmentChoices } from "./InvestmentChoices";
 import { GroundingPanel } from "./GroundingPanel";
 import { SnapshotRecorder } from "./SnapshotRecorder";
 import { IntrinsicValuePanel } from "./IntrinsicValuePanel";
+import { StockNextAction } from "./StockNextAction";
 
 function utcLabel(iso?: string) {
   if (!iso) return null;
@@ -102,5 +103,6 @@ export function ResearchView({ run }: { run: ResearchRun }) {
     <section className="panel"><h2>Sources</h2>{run.citations.length ? <ol>{run.citations.map((c, i) => <li key={`${c.url}-${i}`}><a href={c.url} target="_blank" rel="noreferrer">{c.title}</a> <span className="muted">— {c.source}, tier {c.tier}, retrieved {new Date(c.retrievedAt).toISOString().slice(0, 10)}</span></li>)}</ol> : <p className="muted">No verified sources loaded.</p>}</section>
     {run.notes.length > 0 && <details className="panel"><summary>Technical research notes</summary><ul>{run.notes.map((x, i) => <li key={`${x}-${i}`}>{x}</li>)}</ul></details>}
     </details>
+    <StockNextAction run={run} />
   </>;
 }

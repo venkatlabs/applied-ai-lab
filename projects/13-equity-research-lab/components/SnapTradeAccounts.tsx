@@ -4,10 +4,17 @@ import { PrivatePortfolio } from './PortfolioPrivacy';
 import Link from 'next/link';
 import { accountAttention } from '@/lib/account-attention';
 import { usePortfolioSession } from './PortfolioSession';
-import type { ConnectedSnapshot } from '@/lib/connected-portfolio';
+import { connectedHoldings } from '@/lib/connected-portfolio';
+import { PortfolioNextActions } from './PortfolioNextActions';
 
 function SnapTradeAccountsContent() {
   const { allAccounts: snapshot, refreshAccounts, refreshing: busy, refreshError } = usePortfolioSession();
+  let actionHoldings = null;
+  let actionError = '';
+  if (snapshot?.accounts.length) {
+    try { actionHoldings = connectedHoldings(snapshot).holdings; }
+    catch (error) { actionError = error instanceof Error ? error.message : 'A combined decision queue could not be built from this refresh.'; }
+  }
 
   return <section className="panel">
     <p>Refresh is manual. This page reads account types, reported totals, cash, holdings and update dates from SnapTrade. It makes no AI research calls and does not place trades. Keep the Vercel login gate enabled.</p>
@@ -59,7 +66,9 @@ function SnapTradeAccountsContent() {
             {account.warnings.map((warning, j) => <div key={j} role="note">{warning}</div>)}
           </td>
         </tr>)}</tbody></table></div>
-      <p className="muted">Totals are reported by each brokerage. This page does not add accounts together, convert currencies, or estimate market values from units × price. Cash-equivalent holdings can overlap with cash.</p>
+      {actionHoldings && <PortfolioNextActions holdings={actionHoldings} title="Next actions from this account refresh" />}
+      {actionError && <p className="warning"><strong>Decision queue unavailable:</strong> {actionError}</p>}
+      <p className="muted">Account rows above remain brokerage-reported and are not synthesized into an official household statement. The decision queue combines only the supported USD holdings/cash that pass its coverage checks; retirement/tax location, fund look-through and actual tax lots remain separate gaps.</p>
     </>}
   </section>;
 }

@@ -3,15 +3,17 @@
 > The baton. Read this first and update it last. Protocol: `AGENTS.md`.
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
-**Current holder:** none. Five-case research PR #15 merged as `94360fc` (code `0dbe5d3`). Claude owner-auth PR #11 (updated against main 2026-10-16) is awaiting Venkat's OWNER_ACCESS_KEY setup and merge.
-**Last updated:** 2026-10-20 by Claude. Merged: UX rebuild (PRs #30, #31), hurdle price (#32). In the Watch PR: pre-committed triggers + goalpost log, calendar, daily monitor (cron), weekly digest, refresh-when-due. See `docs/WATCH_2026-10-20.md`. Owner setup pending: Google sign-in env vars, migrations 006, 007, 008, CRON_SECRET. Unverified live: sign-in, migrations, cron runs, new prompt on a real report.
-**Prior update:** 2026-10-08 by Codex
-**Main baseline:** `94360fc` (five-case outlook atop connected-first holdings).
-**Latest feature commits:** `0dbe5d3` / merge `94360fc` (five-case outlook); `69a1965` / merge `2e9a1b9` (browser feedback).
-**Validation:** 206 tests, TypeScript, production build, PR CI and both preview/production checks pass. Synthetic actual-component browser verified five cases, weighted calculations, invalid weight rejection and restoration. Live saved cloud report verified new unavailable-model state, free explorer, hypothetical calculations and original rating restoration; no captured browser errors. Live Activity default/archive/completion controls also verified after previous browser timeouts. No paid research, brokerage refresh or trades. Fresh v0.14.0 provider output and source-level model evaluation remain open.
+**Current holder:** Codex on PR #34 (`codex/decision-action-layer`). Do not merge until the final PR head passes CI/deployment checks.
+**Last updated:** 2026-10-20 by Codex. User clarified the product outcome: every account refresh and individual-stock analysis should end with a data-backed next-step candidate; trading is a later, separately gated capability. PR #34 implements the first deterministic action layer and documents the missing path to trading.
+**Prior update:** 2026-10-20 by Claude (UX rebuild, hurdle price, Watch).
+**Main baseline:** `d1cd677` (PR #33 Watch merged).
+**Latest feature work:** PR #34 decision-action layer (open); PR #33 / merge `d1cd677` (Watch).
+**Validation:** PR #34 TypeScript, automated tests and production build passed on commit `ccbeb434`; final documentation commits require one last CI run. No paid research, live brokerage refresh or trades were performed for this change. Live product verification remains pending until merge/deploy.
 **Notion plan:** https://app.notion.com/p/3eddf6e02bd78120a3fcf8f8cc768af1
 
 ## State
+
+**October 20 decision-action layer:** The portal now has one deterministic action vocabulary downstream of the existing research score: buy/add candidate, hold, hold/do-not-add, trim candidate, sell/exit review, research first, wait/watch and fund-exposure review. A ranked queue is shown on Portfolio and after a connected-account refresh; each stock report ends with a portfolio-aware final next step. Connected average cost is retained only when every combined share has valid reported basis, and tax-loss language is blocked from pretending average cost is actual lot data. See `docs/DECISION_ACTION_LAYER_2026-10-20.md`. P0 next: actual tax lots/wash-sale graph + account tax location, fund look-through/overlap, and one persisted owner portfolio-policy profile. Trading remains out of scope until recommendation quality is prospectively validated.
 
 **October 8 five-case outlook:** Reviewed five recent Investing stock chats as design references, not verified company facts. Reports put the existing unified decision first, then severe bear through severe bull representative outcomes, explicit hypothetical earnings/sales assumptions, source links/dates, weights, deterministic weighted returns and gain/loss weights. A free local explorer changes hypothetical inputs without changing the saved report or rating. Model generation uses the existing synthesis with a 9,000-output-token cap; no additional provider call. Unsupported sector models show exact gaps. Intrinsic values remain separate from one-year prices. Engine/skill v0.14.0. See `docs/FIVE_CASE_RESEARCH_2026-10-08.md`. Existing fresh-source evaluation task in Notion now includes the model assumptions. Binary-event and pre-revenue sector models, probability calibration and live source validation remain open.
 

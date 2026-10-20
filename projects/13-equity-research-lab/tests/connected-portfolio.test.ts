@@ -33,6 +33,25 @@ describe('connected portfolio bridge', () => {
   it('requires reliable positive USD account totals before creating a combined view', () => {
     expect(() => connectedHoldings({ ...snapshot, accounts: [{ ...snapshot.accounts[0], reportedTotal: { amount: 100, currency: 'CAD' } }] })).toThrow('positive USD brokerage total');
   });
+
+  it('preserves weighted average cost only when all combined shares have valid basis', () => {
+    const basisSnapshot: ConnectedSnapshot = {
+      retrievedAt: '2026-10-20T10:00:00.000Z', excludedAccountCount: 0,
+      accounts: [
+        { institution: 'Fidelity', name: 'Taxable', type: 'Brokerage', category: 'investment', status: 'open', reportedTotal: { amount: 200, currency: 'USD' }, lastHoldingsSync: '2026-10-20T09:00:00Z', positionsAsOf: '2026-10-20T09:00:00Z', positionsAvailable: true, positions: [
+          { symbol: 'AMZN', description: 'Amazon', kind: 'stock', units: 2, price: 100, costBasis: 80, currency: 'USD', cashEquivalent: false },
+        ], cash: [{ currency: 'USD', amount: 0 }], warnings: [] },
+        { institution: 'Robinhood', name: 'Taxable', type: 'Brokerage', category: 'investment', status: 'open', reportedTotal: { amount: 330, currency: 'USD' }, lastHoldingsSync: '2026-10-20T09:00:00Z', positionsAsOf: '2026-10-20T09:00:00Z', positionsAvailable: true, positions: [
+          { symbol: 'AMZN', description: 'Amazon', kind: 'stock', units: 3, price: 110, costBasis: 100, currency: 'USD', cashEquivalent: false },
+        ], cash: [{ currency: 'USD', amount: 0 }], warnings: [] },
+      ],
+    };
+    const result = connectedHoldings(basisSnapshot);
+    expect(result.holdings.positions[0]).toMatchObject({ symbol: 'AMZN', shares: 5, price: 106, averageCost: 92 });
+    const missing = structuredClone(basisSnapshot);
+    missing.accounts[1].positions![0].costBasis = null;
+    expect(connectedHoldings(missing).holdings.positions[0].averageCost).toBeUndefined();
+  });
 });
 
 import { selectConnectedAccounts } from '../lib/connected-portfolio';
