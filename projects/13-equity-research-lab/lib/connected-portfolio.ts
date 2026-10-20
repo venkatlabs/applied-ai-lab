@@ -1,7 +1,7 @@
 import type { Holdings } from "./holdings";
 
 export type ConnectedPosition = {
-  symbol: string | null; description: string | null; kind: string | null;
+  symbol: string | null; description?: string | null; kind: string | null;
   units: number | null; price: number | null; costBasis: number | null;
   currency: string | null; cashEquivalent: boolean;
 };
@@ -15,6 +15,15 @@ export type ConnectedAccount = {
 export type ConnectedSnapshot = { retrievedAt: string; excludedAccountCount: number; accounts: ConnectedAccount[] };
 export type ConnectedHoldings = { holdings: Holdings; accountCount: number; includedSymbols: number; notes: string[] };
 
+type CombinedPosition = {
+  shares: number;
+  value: number;
+  kind: "stock" | "fund";
+  costValue: number;
+  costShares: number;
+  basisIncomplete: boolean;
+};
+
 /** Convert a current, tab-only refresh into the saved-holdings shape used by the other workspaces. */
 export function connectedHoldings(snapshot: ConnectedSnapshot): ConnectedHoldings {
   const notes: string[] = [];
@@ -23,9 +32,10 @@ export function connectedHoldings(snapshot: ConnectedSnapshot): ConnectedHolding
     throw new Error("To use this portfolio in other tools, every included account needs a positive USD brokerage total.");
   }
   const totalValue = totals.reduce<number>((sum, value) => sum + (value ?? 0), 0);
-  const positions = new Map<string, { shares: number; value: number; kind: "stock" | "fund" }>();
+  const positions = new Map<string, CombinedPosition>();
   let cashAvailable = 0;
   let partial = false;
+  let anyBasisMissing = false;
   for (const account of snapshot.accounts) {
     if (!account.positionsAvailable || !account.positions) {
       partial = true;
@@ -50,12 +60,23 @@ export function connectedHoldings(snapshot: ConnectedSnapshot): ConnectedHolding
       const value = position.units * position.price;
       if (!Number.isFinite(value) || value < 0) { partial = true; continue; }
       const prior = positions.get(symbol);
-      positions.set(symbol, { shares: (prior?.shares ?? 0) + position.units, value: (prior?.value ?? 0) + value, kind: portfolioKind });
+      const validBasis = position.units === 0 || (position.costBasis !== null && Number.isFinite(position.costBasis) && position.costBasis >= 0);
+      if (!validBasis && position.units > 0) anyBasisMissing = true;
+      positions.set(symbol, {
+        shares: (prior?.shares ?? 0) + position.units,
+        value: (prior?.value ?? 0) + value,
+        kind: portfolioKind,
+        costValue: (prior?.costValue ?? 0) + (validBasis ? position.units * (position.costBasis ?? 0) : 0),
+        costShares: (prior?.costShares ?? 0) + (validBasis ? position.units : 0),
+        basisIncomplete: (prior?.basisIncomplete ?? false) || (!validBasis && position.units > 0),
+      });
     }
   }
   if (partial) notes.unshift("This view excludes unsupported or unavailable exposure. Treat all portfolio guidance as partial until account coverage is verified.");
+  if (anyBasisMissing) notes.push("Average cost is preserved only when every combined position for a symbol has a valid reported cost basis; tax-lot detail is not available in this view.");
   const normalized = [...positions.entries()].filter(([, p]) => p.shares > 0 && p.value > 0).map(([symbol, p]) => ({
     symbol, shares: p.shares, price: p.value / p.shares, kind: p.kind,
+    ...(!p.basisIncomplete && p.costShares > 0 && Math.abs(p.costShares - p.shares) < 1e-8 ? { averageCost: p.costValue / p.costShares } : {}),
   }));
   const invested = normalized.reduce((sum, p) => sum + p.shares * p.price, 0);
   if (cashAvailable + invested > totalValue + 1) {
