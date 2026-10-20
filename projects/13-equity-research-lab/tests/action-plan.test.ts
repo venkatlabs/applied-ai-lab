@@ -30,7 +30,22 @@ describe('portfolio action plan', () => {
       MSFT: check('MSFT', 'Expensive'),
       NBIS: check('NBIS', 'Buy zone'),
     }, [], undefined, now);
-    expect(plan.actions[0]).toMatchObject({ symbol: 'MSFT', label: 'TRIM CANDIDATE', priority: 'Review now', amountUsd: 5000 });
+    expect(plan.actions[0]).toMatchObject({ symbol: 'MSFT', label: 'TRIM CANDIDATE', priority: 'Review now', amountUsd: 5000   it('requires a holdings refresh before a portfolio-aware stock action', () => {
+    const factor = { rating: 'Strong', reason: 'Synthetic evidence', sources: ['https://example.com'], evidenceDate: '2026-10-20' } as const;
+    const run = {
+      ticker: 'NEW', dataMode: 'live', analyzedAt: '2026-10-20T12:00:00Z', marketAsOf: '2026-10-20', asOfPrice: 100,
+      investmentCase: {
+        valuationBasis: 'Independent cash-flow valuation', valuationBenchmark: 'Synthetic',
+        factors: { growth: factor, cash: factor, valuation: factor, competition: factor, execution: factor, market: factor },
+        growthOutlook: 'Synthetic', strongestCounterargument: 'Synthetic', timing: 'Synthetic', changeMind: 'Synthetic',
+      },
+    } as unknown as ResearchRun;
+    const action = stockActionSummary(run, { ...holdings, asOf: '2026-10-01' }, undefined, now);
+    expect(action.label).toBe('REFRESH PORTFOLIO FIRST');
+    expect(action.roomUsd).toBeUndefined();
+    expect(action.blockers.join(' ')).toMatch(/older than seven days/);
+  });
+});
     expect(plan.actions.find(a => a.symbol === 'NBIS')).toMatchObject({ label: 'BUY / ADD CANDIDATE', priority: 'Opportunity', evidence: 'quick valuation' });
     expect(plan.actions.find(a => a.symbol === 'NBIS')?.taxContext).toMatch(/tax-loss review/);
     expect(plan.actions.find(a => a.symbol === 'PG')?.label).toBe('RESEARCH FIRST');
@@ -48,6 +63,17 @@ describe('portfolio action plan', () => {
     const msft = plan.actions.find(a => a.symbol === 'MSFT')!;
     expect(plan.blockers.join(' ')).toMatch(/partial/);
     expect(msft.blockers.join(' ')).toMatch(/Cost basis\/tax lots/);
+  });
+
+  it('withholds directional actions and sizing when the holdings snapshot is stale', () => {
+    const stale: Holdings = { ...holdings, asOf: '2026-10-01' };
+    const plan = portfolioActionPlan(stale, {
+      MSFT: check('MSFT', 'Expensive'),
+      NBIS: check('NBIS', 'Buy zone'),
+    }, [], undefined, now);
+    expect(plan.blockers.join(' ')).toMatch(/older than seven days/);
+    expect(plan.actions.every(a => a.label === 'REFRESH PORTFOLIO FIRST')).toBe(true);
+    expect(plan.actions.every(a => a.amountUsd === undefined && a.taxContext === undefined)).toBe(true);
   });
 
   it('blocks a stale archived report from becoming a new-position buy candidate', () => {
