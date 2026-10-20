@@ -118,6 +118,10 @@ export function stockActionSummary(
   const blockers: string[] = [];
   const reasons: string[] = [];
   const whatChanges = run.investmentCase?.changeMind?.trim() || undefined;
+  const analyzedAt = Date.parse(run.analyzedAt);
+  const reportAgeDays = Number.isFinite(analyzedAt) ? (now.getTime() - analyzedAt) / 86400000 : Infinity;
+  const reportFresh = reportAgeDays >= 0 && reportAgeDays <= 30;
+  if (!reportFresh) blockers.push("The saved report is older than 30 days or has an invalid analysis date; refresh research before relying on a directional stock call.");
 
   if (holdings) {
     if (holdings.coverage === "partial") blockers.push("Portfolio coverage is partial.");
@@ -134,7 +138,7 @@ export function stockActionSummary(
           ...(action.amountUsd != null ? { amountUsd: action.amountUsd } : {}),
           ...(action.amountUsd != null && action.label === "BUY / ADD CANDIDATE" ? { roomUsd: action.amountUsd } : {}),
           ...(action.taxContext ? { taxContext: action.taxContext } : {}),
-          blockers: [...blockers, ...action.blockers],
+          blockers: [...new Set([...blockers, ...action.blockers, ...(!decision.available ? decision.missing : [])])],
           ...(whatChanges ? { whatChanges } : {}),
         };
       }
@@ -148,8 +152,8 @@ export function stockActionSummary(
     if (!decision.available) blockers.push(...decision.missing);
     return {
       symbol: run.ticker,
-      label: newPositionLabel(decision.action),
-      reasons,
+      label: reportFresh ? newPositionLabel(decision.action) : "RESEARCH FIRST",
+      reasons: reportFresh ? reasons : ["The saved company research is stale relative to today. Refresh it before initiating a new position.", ...reasons],
       portfolioWeight: holdings.totalValue > 0 ? currentValue / holdings.totalValue : undefined,
       roomUsd: room,
       blockers: [...new Set(blockers)],
@@ -162,8 +166,8 @@ export function stockActionSummary(
   if (!decision.available) blockers.push(...decision.missing);
   return {
     symbol: run.ticker,
-    label: newPositionLabel(decision.action),
-    reasons,
+    label: reportFresh ? newPositionLabel(decision.action) : "RESEARCH FIRST",
+    reasons: reportFresh ? reasons : ["The saved company research is stale relative to today. Refresh it before initiating a new position.", ...reasons],
     blockers: [...new Set(blockers)],
     ...(whatChanges ? { whatChanges } : {}),
   };
