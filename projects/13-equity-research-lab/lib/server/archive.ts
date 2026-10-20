@@ -62,3 +62,16 @@ export async function changeSnapshotVisibility(ids: string[], restore: boolean) 
   if (error) throw new Error("Cloud archive could not be updated. Try again.");
   return (data ?? []).map(row => row.id as string);
 }
+
+/** Latest saved report per ticker for this account, optionally limited to some symbols. */
+export async function latestReports(symbols?: string[]): Promise<Record<string, ResearchRun>> {
+  const ctx = await archiveContext();
+  if (!ctx) return {};
+  let q = ctx.db.from("equity_snapshots").select("payload").eq("owner_hash", ctx.owner).is("deleted_at", null);
+  if (symbols?.length) q = q.in("ticker", symbols);
+  const { data, error } = await q.order("analyzed_at", { ascending: false }).limit(300);
+  if (error) return {};
+  const out: Record<string, ResearchRun> = {};
+  for (const row of data ?? []) { const run = row.payload as ResearchRun; if (run.dataMode !== "demo" && !out[run.ticker]) out[run.ticker] = run; }
+  return out;
+}

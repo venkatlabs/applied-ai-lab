@@ -117,7 +117,8 @@ export async function accountOwnerHash(sub: string) {
   return Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("");
 }
 
-const PUBLIC = [/^\/signin$/, /^\/api\/auth\//, /^\/robots\.txt$/];
+// /api/cron/* authenticates with CRON_SECRET inside the route; browsers never reach it with a session.
+const PUBLIC = [/^\/signin$/, /^\/api\/auth\//, /^\/api\/cron\//, /^\/robots\.txt$/];
 /** Pure access decision used by middleware. */
 export function accessDecision(pathname: string, configured: boolean, signedIn: boolean): "allow" | "redirect" | "deny" {
   if (!configured || signedIn || PUBLIC.some(p => p.test(pathname))) return "allow";

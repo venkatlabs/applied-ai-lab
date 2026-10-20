@@ -48,3 +48,7 @@ table.breakdown th,table.breakdown td{padding:.4rem .5rem;border-bottom:1px soli
 .my-stocks .stock-summary{grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 4px}.my-stocks .stock-summary .metric{padding:10px 12px;text-align:left;display:flex;align-items:baseline;gap:10px}.my-stocks .stock-summary .metric strong{font-size:1.5rem;display:inline}.my-stocks .stock-summary .metric span{font-size:.82rem}
 .my-stocks .warning{padding:10px 14px;margin:12px 0;font-size:.9rem}.my-stocks .stock-tools{margin:14px 0 6px}
 @media(max-width:650px){.my-stocks .stock-summary{grid-template-columns:1fr}.my-stocks .stock-tools>*{flex:1 1 100%}.my-stocks .stock-tools .ticker-search{flex-direction:row}}
+/* Watch */
+.trigger-list,.alert-list{list-style:none;padding:0;margin:12px 0}.trigger,.alert-list li{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}.alert-list li{display:block}
+.trigger p,.alert-list p{margin:4px 0}.trig-kill{border-color:#9b3b3b;color:#f2a1a1}.trig-upgrade{border-color:#2f7d4b;color:#7ee2a2}.status-watch{border-color:#8a6a1f;color:#f0c874}.status-tripped{background:#3d1a1a;border-color:#9b3b3b;color:#f2a1a1}.goalpost{color:#f0c874}
+@media(max-width:650px){.trigger{grid-template-columns:1fr}}

@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { usePortfolioSession } from './PortfolioSession';
 import { connectedHoldings } from '@/lib/connected-portfolio';
 import { readHoldings } from '@/lib/holdings';
-import { loadArchive, saveRun } from '@/lib/archive';
+import { loadArchive } from '@/lib/archive';
 import { loadChecks, runChecks } from '@/lib/watchlist';
 import { loadFollowed, removeFollowed, saveFollowed } from '@/lib/followed';
 import { buildStockRows, researchQueue, summarize, type StockRow } from '@/lib/stock-list';
+import { useResearchRunner } from './ResearchRunner';
 import type { ResearchRun } from '@/lib/types';
 
 type Budget = { metered: boolean; remaining: number; cap: number; reason?: string };
@@ -25,6 +26,7 @@ export function MyStocks() {
   const [input, setInput] = useState('');
   const [message, setMessage] = useState('');
   const [budget, setBudget] = useState<Budget | null>(null);
+  const [flags, setFlags] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState('');
   const stop = useRef(false);
@@ -38,6 +40,12 @@ export function MyStocks() {
     void loadArchive().then(r => { if (active) { setRuns(r.runs); setLoaded(true); } });
     void loadFollowed().then(r => { if (active) { setFollowing(r.stocks.map(s => s.symbol)); setSynced(r.synced); } });
     fetch('/api/research-budget', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(b => { if (active) setBudget(b); }).catch(() => undefined);
+    fetch('/api/triggers', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then((d: { triggers: { symbol: string; kind: string; status: string }[] } | null) => {
+      if (!active || !d) return;
+      const out: Record<string, string> = {};
+      for (const t of d.triggers) if (t.status !== 'armed') out[t.symbol] = out[t.symbol] === 'tripped' || t.status === 'tripped' ? 'tripped' : 'watch';
+      setFlags(out);
+    }).catch(() => undefined);
     return () => { active = false; };
   }, [refreshPrices]);
   useEffect(() => {
@@ -62,27 +70,9 @@ export function MyStocks() {
     setSynced(await saveFollowed(symbols, 'follow'));
     setMessage(`Following ${symbols.join(', ')}. Press Research on a row to get its verdict.`);
   }
-  async function researchQueueNow() {
-    if (!queue.length || busy) return;
-    if (!window.confirm(`Research ${queue.length} stock${queue.length === 1 ? '' : 's'} you own (${queue.join(', ')})?\n\nEach uses one paid report from today's budget (${remaining} left). It stops if the budget runs out or an error occurs.`)) return;
-    setBusy(true); stop.current = false; setMessage('');
-    let done = 0;
-    for (const ticker of queue) {
-      if (stop.current) break;
-      setProgress(`Researching ${ticker} (${done + 1} of ${queue.length})… this takes a few minutes.`);
-      try {
-        const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticker }) });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error ?? 'Research could not complete.');
-        saveRun(body as ResearchRun);
-        setRuns(prev => [body as ResearchRun, ...prev.filter(r => r.id !== body.id)]);
-        done++;
-      } catch (error) { setMessage(`${ticker}: ${error instanceof Error ? error.message : 'Research could not complete.'} Stopped after ${done} report${done === 1 ? '' : 's'}.`); break; }
-    }
-    setProgress(''); setBusy(false);
-    if (done === queue.length) setMessage(`Done. ${done} stock${done === 1 ? '' : 's'} researched.`);
-    void fetch('/api/research-budget', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(setBudget).catch(() => undefined);
-  }
+  const budgetNow = () => void fetch('/api/research-budget', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(setBudget).catch(() => undefined);
+  const runner = useResearchRunner(report => setRuns(prev => [report, ...prev.filter(r => r.id !== report.id)]), budgetNow);
+  const researchQueueNow = () => runner.run(queue, remaining, 'stocks you own without a verdict');
   async function updatePrices() {
     if (busy) return;
     setBusy(true); stop.current = false;
@@ -101,25 +91,25 @@ export function MyStocks() {
     </div>}
     <div className="toolbar stock-tools">
       <form className="ticker-search" onSubmit={e => void add(e)}><input aria-label="Add tickers to follow" placeholder="Add: NVDA, MSFT" value={input} onChange={e => setInput(e.target.value)} /><button type="submit">Follow</button></form>
-      <button className="action" disabled={busy || !queue.length} onClick={() => void researchQueueNow()} title={queue.length ? '' : remaining ? 'Every stock you own already has a verdict' : 'No research budget left today'}>
-        {busy && progress.startsWith('Researching') ? 'Researching…' : queue.length ? `Research ${queue.length} unresearched holding${queue.length === 1 ? '' : 's'}` : 'All holdings researched'}</button>
+      <button className="action" disabled={busy || runner.busy || !queue.length} onClick={() => void researchQueueNow()} title={queue.length ? '' : remaining ? 'Every stock you own already has a verdict' : 'No research budget left today'}>
+        {runner.busy ? 'Researching…' : queue.length ? `Research ${queue.length} unresearched holding${queue.length === 1 ? '' : 's'}` : 'All holdings researched'}</button>
       <button className="action secondary" disabled={busy || !rows.some(r => r.outcome.verdict !== 'Not researched')} onClick={() => void updatePrices()}>Update prices (free)</button>
     </div>
     {budget?.metered && <p className="muted">Research budget today: {budget.remaining} of {budget.cap} new reports left (resets 00:00 UTC). {budget.reason ? budget.reason : ''}</p>}
-    <p role="status">{progress || message}</p>
+    <p role="status">{runner.progress || progress || runner.message || message}</p>
     {!loaded ? <p role="status">Loading your research…</p> : rows.length === 0
       ? <div className="panel"><h2>Start with your holdings</h2><p>Connect your accounts to bring in everything you own, or follow a ticker above.</p><div className="button-row"><Link className="action" href="/accounts">Connect accounts</Link><Link className="action secondary" href="/holdings">Import holdings</Link></div></div>
-      : <div className="stock-list" role="list">{rows.map(row => <StockCard key={row.symbol} row={row} onRemove={async () => { setFollowing(f => f.filter(s => s !== row.symbol)); await removeFollowed(row.symbol); }} />)}</div>}
+      : <div className="stock-list" role="list">{rows.map(row => <StockCard key={row.symbol} row={row} flag={flags[row.symbol]} onRemove={async () => { setFollowing(f => f.filter(s => s !== row.symbol)); await removeFollowed(row.symbol); }} />)}</div>}
     <p className="muted">Verdicts are research outputs from the evidence available on the report date, not personal advice. Low confidence means key evidence is missing; the report lists what.</p>
   </section>;
 }
 
-function StockCard({ row, onRemove }: { row: StockRow; onRemove: () => void }) {
+function StockCard({ row, onRemove, flag }: { row: StockRow; onRemove: () => void; flag?: string }) {
   const o = row.outcome;
   const href = row.report ? `/research/${encodeURIComponent(row.report.id)}` : `/company/${encodeURIComponent(row.symbol)}`;
   return <article className="stock-row" role="listitem">
     <div className="stock-id"><h3><Link href={href}>{row.symbol}</Link> <small>{row.companyName !== row.symbol ? row.companyName : ''}</small></h3>
-      <p className="tags">{row.owned && <span className="tag">Owned</span>}{row.following && !row.owned && <span className="tag">Following</span>}{row.reportCount > 1 && <span className="tag">{row.reportCount} reports</span>}</p></div>
+      <p className="tags">{row.owned && <span className="tag">Owned</span>}{row.following && !row.owned && <span className="tag">Following</span>}{row.reportCount > 1 && <span className="tag">{row.reportCount} reports</span>}{flag && <Link href="/watch" className={`tag status-${flag}`}>{flag === 'tripped' ? 'Trigger tripped' : 'Trigger on watch'}</Link>}</p></div>
     <div className="stock-verdict"><strong className={`verdict-badge ${verdictClass(o.verdict)}`}>{o.verdict}</strong>
       {o.confidence && <span className="muted">{o.confidence} confidence · score {o.score}</span>}</div>
     <div className="stock-why"><p>{o.verdict === 'Not researched' ? o.headline : row.owned ? o.ownedAction : o.notOwnedAction}</p>
