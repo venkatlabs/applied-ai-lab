@@ -8,7 +8,7 @@
 **Prior update:** 2026-10-20 by Claude (UX rebuild, hurdle price, Watch).
 **Main baseline:** `fb024f2` (PR #34 decision-action layer).
 **Latest feature work:** PR #34 / merge `fb024f2` (decision-action layer); PR #33 / merge `d1cd677` (Watch).
-**Validation:** final PR #34 head `f5ae4ef` passed TypeScript, automated tests and production build; both Vercel PR preview checks passed. The post-merge production deployment was still pending when this handoff was written. No paid research, live brokerage refresh or trades were performed for this change.
+**Validation:** final PR #34 head `f5ae4ef` passed TypeScript, automated tests and production build; both Vercel PR preview checks passed. Post-merge Vercel deployments for both the Equity Research Lab and repo root passed on merge `fb024f2`. No paid research, live brokerage refresh or trades were performed for this change.
 **Notion plan:** https://app.notion.com/p/3eddf6e02bd78120a3fcf8f8cc768af1
 
 ## State
