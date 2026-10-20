@@ -5,7 +5,7 @@ description: Research listed companies and revisit personal portfolio buy, hold,
 
 # Equity Research Skill
 
-Version: `equity-research-v0.15.0` (matches `lib/research-engine.ts` `skillVersion`)
+Version: `equity-research-v0.15.1` (matches `lib/research-engine.ts` `skillVersion`)
 
 ## Purpose
 Help the owner decide what to do with a stock (buy, hold, trim or wait) without mixing up business quality, valuation, market expectations and timing. Every conclusion is saved as a timestamped snapshot, so later reports and the decision journal can grade it.

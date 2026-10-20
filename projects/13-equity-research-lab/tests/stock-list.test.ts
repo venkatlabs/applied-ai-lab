@@ -82,3 +82,24 @@ describe("/api/stocks", () => {
     vi.doUnmock("@/lib/server/archive");
   });
 });
+
+describe("hurdle view", () => {
+  const cases = [60, 80, 110, 140, 200].map((price, i) => ({ price, weight: [10, 20, 40, 20, 10][i] }));
+  const withModel = (over: Record<string, unknown> = {}) => run("HUR", "Mixed", { scenarioDistribution: { cases }, ...over });
+  it("derives the price that earns the hurdle from the weighted five-case value", async () => {
+    const { hurdleView } = await import("../lib/hurdle");
+    const v = hurdleView(withModel())!;
+    // expected = 6+16+44+28+20 = 114; at $100 that is +14%, just under 15%
+    expect(v.expectedPrice).toBeCloseTo(114, 6); expect(v.expectedReturnPct).toBe(14);
+    expect(v.hurdlePrice).toBeCloseTo(114 / 1.15, 6); expect(v.clears).toBe(false); expect(v.gapPct).toBeCloseTo(0.9, 1);
+    expect(hurdleView(withModel(), undefined, 0.1)!.clears).toBe(true);
+  });
+  it("uses a newer price when one is known, otherwise the report price, and needs a full model", async () => {
+    const { hurdleView } = await import("../lib/hurdle");
+    expect(hurdleView(withModel(), { price: 90, date: "2026-10-15" })).toMatchObject({ referencePrice: 90, fromReport: false, clears: true });
+    expect(hurdleView(withModel(), { price: 90, date: "2026-10-01" })).toMatchObject({ referencePrice: 100, fromReport: true });
+    expect(hurdleView(run("NOM", "Mixed"))).toBeNull();
+    expect(hurdleView(withModel({ scenarioDistribution: { cases: cases.slice(0, 3) } }))).toBeNull();
+    expect(hurdleView(undefined)).toBeNull();
+  });
+});
