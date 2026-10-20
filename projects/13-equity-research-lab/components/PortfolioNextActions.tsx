@@ -13,10 +13,12 @@ export function PortfolioNextActions({
   holdings,
   title = 'Recommended next actions',
   maxItems = 6,
+  singleStockLimit = 0.10,
 }: {
   holdings: Holdings;
   title?: string;
   maxItems?: number;
+  singleStockLimit?: number;
 }) {
   const [checks, setChecks] = useState<Record<string, QuickCheck>>({});
   const [runs, setRuns] = useState<ResearchRun[]>([]);
@@ -27,7 +29,7 @@ export function PortfolioNextActions({
     return () => { active = false; };
   }, []);
 
-  const plan = portfolioActionPlan(holdings, checks, runs);
+  const plan = portfolioActionPlan(holdings, checks, runs, { singleStock: singleStockLimit, sector: 0.30 });
   const rows = plan.actions.slice(0, maxItems);
 
   return <section className="panel">
