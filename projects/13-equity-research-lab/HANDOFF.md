@@ -3,12 +3,12 @@
 > The baton. Read this first and update it last. Protocol: `AGENTS.md`.
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
-**Current holder:** Codex on PR #34 (`codex/decision-action-layer`). Do not merge until the final PR head passes CI/deployment checks.
-**Last updated:** 2026-10-20 by Codex. User clarified the product outcome: every account refresh and individual-stock analysis should end with a data-backed next-step candidate; trading is a later, separately gated capability. PR #34 implements the first deterministic action layer and documents the missing path to trading.
+**Current holder:** none. PR #34 merged as `fb024f2`.
+**Last updated:** 2026-10-20 by Codex. User clarified the product outcome: every account refresh and individual-stock analysis should end with a data-backed next-step candidate; trading is a later, separately gated capability. The deterministic decision-action layer is merged and mirrored to the Notion project page.
 **Prior update:** 2026-10-20 by Claude (UX rebuild, hurdle price, Watch).
-**Main baseline:** `d1cd677` (PR #33 Watch merged).
-**Latest feature work:** PR #34 decision-action layer (open); PR #33 / merge `d1cd677` (Watch).
-**Validation:** PR #34 TypeScript, automated tests and production build passed on commit `ccbeb434`; final documentation commits require one last CI run. No paid research, live brokerage refresh or trades were performed for this change. Live product verification remains pending until merge/deploy.
+**Main baseline:** `fb024f2` (PR #34 decision-action layer).
+**Latest feature work:** PR #34 / merge `fb024f2` (decision-action layer); PR #33 / merge `d1cd677` (Watch).
+**Validation:** final PR #34 head `f5ae4ef` passed TypeScript, automated tests and production build; both Vercel PR preview checks passed. Post-merge Vercel deployments for both the Equity Research Lab and repo root passed on merge `fb024f2`. No paid research, live brokerage refresh or trades were performed for this change.
 **Notion plan:** https://app.notion.com/p/3eddf6e02bd78120a3fcf8f8cc768af1
 
 ## State
