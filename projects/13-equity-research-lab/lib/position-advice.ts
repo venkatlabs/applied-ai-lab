@@ -1,7 +1,7 @@
 import type { Holdings } from "./holdings";
 import type { QuickCheck } from "./quick-check";
 import type { ResearchRun } from "./types";
-import { singleInvestmentDecision } from "./investment";
+import { researchOutcome } from "./outcome";
 import { DEFAULT_LIMITS } from "./diversification";
 
 // Hold / add / trim / review for each saved holding. Transparent rules combining three
@@ -30,10 +30,16 @@ export function adviseHoldings(h: Holdings, checks: Record<string, QuickCheck>, 
     const savedCheck=checks[p.symbol];
     const fresh=(date:string|undefined,limit:number)=>{const age=(now.getTime()-Date.parse(date??''))/DAY;return Number.isFinite(age)&&age>=0&&age<=limit;};
     const check=savedCheck&&fresh(savedCheck.checkedAt,7)&&fresh(savedCheck.priceDate,7)?savedCheck:undefined;
-    const report = runs.filter(r => r.ticker === p.symbol && r.dataMode !== "demo" && fresh(r.analyzedAt,30))
+    const report = runs.filter(r => r.ticker === p.symbol && r.dataMode !== "demo" && fresh(r.analyzedAt,90))
       .sort((a, b) => b.analyzedAt.localeCompare(a.analyzedAt))[0];
-    const decision = report ? singleInvestmentDecision(report) : undefined;
-    const reportAction = decision?.available ? decision.action === 'Buy candidate' && !fresh(report?.marketAsOf,7) ? 'Older buy view — refresh price and valuation' : decision.action : undefined;
+    // One outcome model everywhere: a verdict with a confidence, never a withheld answer.
+    const outcome = report ? researchOutcome(report, now) : undefined;
+    const reportAge = report ? Math.floor((now.getTime() - Date.parse(report.analyzedAt)) / DAY) : 0;
+    const reportAction = !outcome || outcome.verdict === "Not researched" ? undefined
+      : outcome.verdict === "Buy / Add" ? (fresh(report?.marketAsOf,7) && reportAge <= 30 ? "Buy candidate" : "Older buy view — refresh price and valuation")
+      : outcome.verdict === "Sell / Avoid" ? "Avoid / review selling"
+      : outcome.verdict === "Trim" ? "Trim candidate" : "Hold";
+    const decision = outcome ? { score: outcome.score } : undefined;
     const zone = check?.zone;
     const reasons: string[] = [];
     const base = { symbol: p.symbol, value, weight, zone, reportAction, unrealizedGainPct: gain != null ? Number((gain * 100).toFixed(1)) : undefined };
@@ -45,6 +51,10 @@ export function adviseHoldings(h: Holdings, checks: Record<string, QuickCheck>, 
     if (reportAction === "Avoid / review selling") {
       reasons.push(`Your full report from ${report!.analyzedAt.slice(0, 10)} rated it "${reportAction}" (score ${decision!.score}).${taxNote}`);
       return { ...base, action: "Review selling" as const, reasons };
+    }
+    if (reportAction === "Trim candidate") {
+      reasons.push(`Your full report from ${report!.analyzedAt.slice(0, 10)} leans negative: "${outcome!.headline}" (score ${decision!.score}).${taxNote}`);
+      return { ...base, action: "Trim candidate" as const, reasons };
     }
     if (weight > limits.singleStock) {
       if (zone === "Expensive") { reasons.push(`Above your limit (${pct(weight)}) and priced above its intrinsic value range.${taxNote}`); return { ...base, action: "Trim candidate" as const, amount: value - cap, reasons }; }
@@ -61,7 +71,7 @@ export function adviseHoldings(h: Holdings, checks: Record<string, QuickCheck>, 
     if (!check && !reportAction) return { ...base, action: "Check value first" as const, reasons: ["No quick check or recent report yet."] };
     if (zone === "Expensive") reasons.push("Priced above its intrinsic value range; hold only while the thesis holds and don't add at this price.");
     else if (zone === "Not valued") reasons.push(check?.valuation.available === false ? `Not valued by the DCF: ${check.valuation.note}` : "Not valued.");
-    else reasons.push(zone ? `Valuation: ${zone}.` : `Full report: ${reportAction}.`);
+    else reasons.push(zone ? `Valuation: ${zone}.` : `Full report (${report!.analyzedAt.slice(0, 10)}): ${outcome!.headline}${reportAge > 30 ? ` It is ${reportAge} days old; refresh when you can.` : ""}`);
     return { ...base, action: "Hold" as const, reasons };
   }).sort((a, b) => b.weight - a.weight);
 }

@@ -36,7 +36,7 @@ export type Outcome = {
   bullPrice: number | null;
 };
 
-const shorten = (s: string, n = 180) => s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s;
+const shorten = (s: string | undefined, n = 180) => { const t = s ?? ""; return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t; };
 const empty = (headline: string, missing: string[]): Outcome => ({
   verdict: "Not researched", lean: null, score: null, confidence: null, confidencePoints: null, method: "none", headline,
   ownedAction: "Research this stock before deciding.", notOwnedAction: "Research this stock before deciding.",
@@ -85,8 +85,8 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
       verdict, lean, score: legacy, confidence: "Low", confidencePoints: 25, method: "legacy",
       headline: `Older-method view: ${verdict.toLowerCase()}. Low confidence; rerun for the current method.`,
       ownedAction: actions[verdict].owned, notOwnedAction: actions[verdict].notOwned,
-      reasonsFor: run.highlights.slice(0, 2).map(h => shorten(h)), reasonsAgainst: run.risks.slice(0, 2).map(r => shorten(r)),
-      changeMind: run.thesisKillers[0] ? shorten(run.thesisKillers[0]) : "", missing: ["A report using the current six-factor method"],
+      reasonsFor: (run.highlights ?? []).slice(0, 2).map(h => shorten(h)), reasonsAgainst: (run.risks ?? []).slice(0, 2).map(r => shorten(r)),
+      changeMind: run.thesisKillers?.[0] ? shorten(run.thesisKillers[0]) : "", missing: ["A report using the current six-factor method"],
       analyzedAt: run.analyzedAt, ageDays, needsRefresh, ...range,
     };
   }

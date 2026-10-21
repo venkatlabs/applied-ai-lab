@@ -3,7 +3,7 @@ import type { QuickCheck } from "./quick-check";
 import type { ResearchRun } from "./types";
 import { adviseHoldings, type PositionAdvice } from "./position-advice";
 import { DEFAULT_LIMITS } from "./diversification";
-import { singleInvestmentDecision } from "./investment";
+import { researchOutcome, type Outcome } from "./outcome";
 
 export type RecommendedActionLabel =
   | "BUY / ADD CANDIDATE"
@@ -114,7 +114,7 @@ export function stockActionSummary(
   limits = DEFAULT_LIMITS,
   now = new Date(),
 ): StockActionSummary {
-  const decision = singleInvestmentDecision(run);
+  const decision = researchOutcome(run, now);
   const blockers: string[] = [];
   const reasons: string[] = [];
   const whatChanges = run.investmentCase?.changeMind?.trim() || undefined;
@@ -122,6 +122,7 @@ export function stockActionSummary(
   const reportAgeDays = Number.isFinite(analyzedAt) ? (now.getTime() - analyzedAt) / 86400000 : Infinity;
   const reportFresh = reportAgeDays >= 0 && reportAgeDays <= 30;
   if (!reportFresh) blockers.push("The saved report is older than 30 days or has an invalid analysis date; refresh research before relying on a directional stock call.");
+  if (decision.confidence !== "High" && decision.confidence !== "Medium") blockers.push(...decision.missing);
 
   if (holdings) {
     if (holdings.coverage === "partial") blockers.push("Portfolio coverage is partial.");
@@ -138,7 +139,7 @@ export function stockActionSummary(
           ...(action.amountUsd != null ? { amountUsd: action.amountUsd } : {}),
           ...(action.amountUsd != null && action.label === "BUY / ADD CANDIDATE" ? { roomUsd: action.amountUsd } : {}),
           ...(action.taxContext ? { taxContext: action.taxContext } : {}),
-          blockers: [...new Set([...blockers, ...action.blockers, ...(!decision.available ? decision.missing : [])])],
+          blockers: [...new Set([...blockers, ...action.blockers])],
           ...(whatChanges ? { whatChanges } : {}),
         };
       }
@@ -147,12 +148,11 @@ export function stockActionSummary(
     const recorded = holdings.positions.find(p => p.symbol === run.ticker);
     const currentValue = recorded ? recorded.shares * recorded.price : 0;
     const room = Math.max(0, limits.singleStock * holdings.totalValue - currentValue);
-    reasons.push(decision.reason);
+    reasons.push(decision.headline);
     reasons.push(`Portfolio room under the ${(limits.singleStock * 100).toFixed(0)}% single-stock planning limit is about $${Math.round(room).toLocaleString("en-US")} before overlap and taxes.`);
-    if (!decision.available) blockers.push(...decision.missing);
     return {
       symbol: run.ticker,
-      label: reportFresh ? newPositionLabel(decision.action) : "RESEARCH FIRST",
+      label: reportFresh ? newPositionLabel(decision.verdict) : "RESEARCH FIRST",
       reasons: reportFresh ? reasons : ["The saved company research is stale relative to today. Refresh it before initiating a new position.", ...reasons],
       portfolioWeight: holdings.totalValue > 0 ? currentValue / holdings.totalValue : undefined,
       roomUsd: room,
@@ -161,12 +161,11 @@ export function stockActionSummary(
     };
   }
 
-  reasons.push(decision.reason);
+  reasons.push(decision.headline);
   blockers.push("Portfolio holdings are unavailable, so position sizing and concentration are not included.");
-  if (!decision.available) blockers.push(...decision.missing);
   return {
     symbol: run.ticker,
-    label: reportFresh ? newPositionLabel(decision.action) : "RESEARCH FIRST",
+    label: reportFresh ? newPositionLabel(decision.verdict) : "RESEARCH FIRST",
     reasons: reportFresh ? reasons : ["The saved company research is stale relative to today. Refresh it before initiating a new position.", ...reasons],
     blockers: [...new Set(blockers)],
     ...(whatChanges ? { whatChanges } : {}),
@@ -197,10 +196,10 @@ function priorityFor(action: PositionAdvice["action"]): ActionPriority {
   return "Monitor";
 }
 
-function newPositionLabel(action: ReturnType<typeof singleInvestmentDecision>["action"]): RecommendedActionLabel {
-  if (action === "Buy candidate") return "BUY / ADD CANDIDATE";
-  if (action === "Avoid / review selling") return "AVOID / DO NOT INITIATE";
-  if (action === "Research incomplete" || action === "Older report · rerun") return "RESEARCH FIRST";
+function newPositionLabel(verdict: Outcome["verdict"]): RecommendedActionLabel {
+  if (verdict === "Buy / Add") return "BUY / ADD CANDIDATE";
+  if (verdict === "Trim" || verdict === "Sell / Avoid") return "AVOID / DO NOT INITIATE";
+  if (verdict === "Not researched") return "RESEARCH FIRST";
   return "WAIT / WATCH";
 }
 

@@ -74,7 +74,7 @@ describe('portfolio action plan', () => {
       ticker: 'MSFT', dataMode: 'live', analyzedAt: '2026-10-20T12:00:00Z', marketAsOf: '2026-10-20', asOfPrice: 100,
     } as unknown as ResearchRun;
     const action = stockActionSummary(run, holdings, undefined, now);
-    expect(action.blockers.join(' ')).toMatch(/fresh report|unified investment method/);
+    expect(action.blockers.join(' ')).toMatch(/current method|fresh report|unified investment method/);
   });
 });
 
