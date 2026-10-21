@@ -71,3 +71,10 @@ describe("researchOutcome", () => {
     const m = latestByTicker([a, b, d]); expect(m.get("ABC")!.id).toBe("b"); expect(m.has("XYZ")).toBe(false);
   });
 });
+
+it("tolerates archived reports with missing optional text fields", () => {
+  const r = run({}, { highlights: undefined, risks: undefined, thesisKillers: undefined });
+  delete (r.investmentCase as unknown as Record<string, unknown>).changeMind;
+  expect(researchOutcome(r, now)).toMatchObject({ verdict: "Hold", changeMind: "" });
+  expect(researchOutcome(run({}, { investmentCase: undefined, score: 55, highlights: undefined, risks: undefined, thesisKillers: undefined }), now).method).toBe("legacy");
+});

@@ -3,8 +3,8 @@
 > The baton. Read this first and update it last. Protocol: `AGENTS.md`.
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
-**Current holder:** none. PR #34 merged as `fb024f2`.
-**Last updated:** 2026-10-20 by Codex. User clarified the product outcome: every account refresh and individual-stock analysis should end with a data-backed next-step candidate; trading is a later, separately gated capability. The deterministic decision-action layer is merged and mirrored to the Notion project page.
+**Current holder:** none. Claude PRs #30–#33 and Codex PRs #34–#35 merged; the outcome-consistency PR is the newest.
+**Last updated:** 2026-10-21 by Claude. Resumed; baseline 286 tests green. Made the holdings advice and stock action summary use the same research outcome as My stocks (verdict + confidence), so a stock with incomplete evidence no longer reads "Research first" while My stocks shows a verdict. Reports up to 90 days old still inform verdicts; new-position buy candidates still need a report 30 days old or newer. Owner setup still pending (see Next up). Unverified live: Google sign-in, migrations 006/007/008, cron runs, prompt v0.15.1 on a real report.
 **Prior update:** 2026-10-20 by Claude (UX rebuild, hurdle price, Watch).
 **Main baseline:** `fb024f2` (PR #34 decision-action layer).
 **Latest feature work:** PR #34 / merge `fb024f2` (decision-action layer); PR #33 / merge `d1cd677` (Watch).
@@ -58,7 +58,7 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Next up (in order)
 
-00. **Venkat, before the next `/accounts` refresh:** add `OWNER_ACCESS_KEY` (server-only, `openssl rand -base64 32`) to Vercel Production + Preview, then merge the owner-auth PR. Until the key is set, account refresh is disabled by design. Keep it in a password manager; never in chat, Notion or the repo.
+00. **Venkat (owner setup, none of it done yet):** Google OAuth client + `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`, `OWNER_EMAILS` (docs/GOOGLE_SIGNIN_SETUP.md); run Supabase migrations 006, 007, 008; set `CRON_SECRET` (docs/WATCH_2026-10-20.md); then refresh accounts and press Research on unresearched holdings. `OWNER_ACCESS_KEY` is only a fallback while Google sign-in is unset. Notion Inbox has one card per step.
 - Owner: complete the existing owner-key / security PR #11 setup and first brokerage refresh/reconciliation task. Portfolio home is delivered; no new navigation approval is needed. Next agent: verify imported mutual-fund classification, then improve portfolio-aware candidate additions and destination allocations without adding more menu destinations.
 
 0. Any agent: evaluate one fresh v0.14.0 report against actual source observations, dates, proposed thresholds, event dates and five-case operating/dilution/valuation assumptions. Prefer an existing report; otherwise one explicit capped request. Notion action: https://app.notion.com/p/3efdf6e02bd781399bd9d6c13b0df83e. Skill validation script lacked PyYAML; frontmatter/reference paths inspected manually.
@@ -77,6 +77,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-21 Claude: resumed. Unified holdings advice and stock action labels on `researchOutcome` (lib/outcome.ts); outcome now tolerates archived reports missing optional text fields. 292 tests.
 
 - 2026-10-20 Claude: Watch features (triggers with status and goalpost log, calendar, daily no-LLM monitor via Vercel Cron, weekly digest, capped refresh of stocks whose dated test passed). Migration 008. Needs CRON_SECRET.
 
