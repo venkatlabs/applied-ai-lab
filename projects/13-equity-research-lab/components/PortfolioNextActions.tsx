@@ -22,12 +22,31 @@ export function PortfolioNextActions({
 }) {
   const [checks, setChecks] = useState<Record<string, QuickCheck>>({});
   const [runs, setRuns] = useState<ResearchRun[]>([]);
+  const [archiveState, setArchiveState] = useState<'loading' | 'ready' | 'error'>('loading');
   useEffect(() => {
     let active = true;
     setChecks(loadChecks());
-    void loadArchive().then(result => { if (active) setRuns(result.runs); });
+    void loadArchive()
+      .then(result => {
+        if (!active) return;
+        setRuns(result.runs);
+        setArchiveState('ready');
+      })
+      .catch(() => {
+        if (active) setArchiveState('error');
+      });
     return () => { active = false; };
   }, []);
+
+  if (archiveState !== 'ready') {
+    return <section className="panel">
+      <p className="eyebrow">DECISION QUEUE</p>
+      <h2>{title}</h2>
+      {archiveState === 'loading'
+        ? <p>Loading saved full reports before ranking actions…</p>
+        : <p className="warning"><strong>Decision queue withheld.</strong> Saved full reports could not be loaded, so a lower-priority quick valuation will not be allowed to stand in for potentially conflicting research.</p>}
+    </section>;
+  }
 
   const plan = portfolioActionPlan(holdings, checks, runs, { singleStock: singleStockLimit, sector: 0.30 });
   const rows = plan.actions.slice(0, maxItems);

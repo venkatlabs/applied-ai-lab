@@ -24,6 +24,26 @@ const check = (ticker: string, zone: QuickCheck['zone']): QuickCheck => ({
   valuation: { available: true },
 } as unknown as QuickCheck);
 
+function strongRun(ticker: string, analyzedAt = '2026-10-20T12:00:00Z'): ResearchRun {
+  const factor = { rating: 'Strong', reason: 'Synthetic evidence', sources: ['https://example.com'], evidenceDate: analyzedAt.slice(0, 10) } as const;
+  return {
+    ticker,
+    dataMode: 'live',
+    analyzedAt,
+    marketAsOf: analyzedAt.slice(0, 10),
+    asOfPrice: 100,
+    investmentCase: {
+      valuationBasis: 'Independent cash-flow valuation',
+      valuationBenchmark: 'Synthetic',
+      factors: { growth: factor, cash: factor, valuation: factor, competition: factor, execution: factor, market: factor },
+      growthOutlook: 'Synthetic',
+      strongestCounterargument: 'Synthetic',
+      timing: 'Price and evidence support review now.',
+      changeMind: 'A material thesis break.',
+    },
+  } as unknown as ResearchRun;
+}
+
 describe('portfolio action plan', () => {
   it('ranks risk reduction before buys and carries sizing, evidence and tax context', () => {
     const plan = portfolioActionPlan(holdings, {
@@ -50,21 +70,19 @@ describe('portfolio action plan', () => {
     expect(msft.blockers.join(' ')).toMatch(/Cost basis\/tax lots/);
   });
 
+  it('withholds directional actions and sizing when the holdings snapshot is stale', () => {
+    const stale: Holdings = { ...holdings, asOf: '2026-10-01' };
+    const plan = portfolioActionPlan(stale, {
+      MSFT: check('MSFT', 'Expensive'),
+      NBIS: check('NBIS', 'Buy zone'),
+    }, [], undefined, now);
+    expect(plan.blockers.join(' ')).toMatch(/older than seven days/);
+    expect(plan.actions.every(a => a.label === 'REFRESH PORTFOLIO FIRST')).toBe(true);
+    expect(plan.actions.every(a => a.amountUsd === undefined && a.taxContext === undefined)).toBe(true);
+  });
+
   it('blocks a stale archived report from becoming a new-position buy candidate', () => {
-    const factor = { rating: 'Strong', reason: 'Synthetic evidence', sources: ['https://example.com'], evidenceDate: '2026-08-01' } as const;
-    const run = {
-      ticker: 'OLD',
-      dataMode: 'live',
-      analyzedAt: '2026-08-01T12:00:00Z',
-      marketAsOf: '2026-08-01',
-      asOfPrice: 100,
-      investmentCase: {
-        valuationBasis: 'Independent cash-flow valuation', valuationBenchmark: 'Synthetic',
-        factors: { growth: factor, cash: factor, valuation: factor, competition: factor, execution: factor, market: factor },
-        growthOutlook: 'Synthetic', strongestCounterargument: 'Synthetic', timing: 'Synthetic', changeMind: 'Synthetic',
-      },
-    } as unknown as ResearchRun;
-    const action = stockActionSummary(run, holdings, undefined, now);
+    const action = stockActionSummary(strongRun('OLD', '2026-08-01T12:00:00Z'), holdings, undefined, now);
     expect(action.label).toBe('RESEARCH FIRST');
     expect(action.blockers.join(' ')).toMatch(/older than 30 days/);
   });
@@ -80,23 +98,16 @@ describe('portfolio action plan', () => {
 
 describe('stock action summary', () => {
   it('turns a fresh high-quality stock report into an initiation candidate with portfolio room', () => {
-    const factor = { rating: 'Strong', reason: 'Synthetic evidence', sources: ['https://example.com'], evidenceDate: '2026-10-20' } as const;
-    const run = {
-      ticker: 'NEW',
-      dataMode: 'live',
-      analyzedAt: '2026-10-20T12:00:00Z',
-      marketAsOf: '2026-10-20',
-      asOfPrice: 100,
-      investmentCase: {
-        valuationBasis: 'Independent cash-flow valuation',
-        valuationBenchmark: 'Synthetic',
-        factors: { growth: factor, cash: factor, valuation: factor, competition: factor, execution: factor, market: factor },
-        growthOutlook: 'Synthetic', strongestCounterargument: 'Synthetic', timing: 'Price and evidence support review now.', changeMind: 'A material thesis break.',
-      },
-    } as unknown as ResearchRun;
-    const action = stockActionSummary(run, holdings, undefined, now);
+    const action = stockActionSummary(strongRun('NEW'), holdings, undefined, now);
     expect(action.label).toBe('BUY / ADD CANDIDATE');
     expect(action.roomUsd).toBe(10_000);
     expect(action.whatChanges).toBe('A material thesis break.');
+  });
+
+  it('requires a holdings refresh before a portfolio-aware stock action', () => {
+    const action = stockActionSummary(strongRun('NEW'), { ...holdings, asOf: '2026-10-01' }, undefined, now);
+    expect(action.label).toBe('REFRESH PORTFOLIO FIRST');
+    expect(action.roomUsd).toBeUndefined();
+    expect(action.blockers.join(' ')).toMatch(/older than seven days/);
   });
 });
