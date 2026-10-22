@@ -1,0 +1,117 @@
+{
+ "id": "fx-o",
+ "ticker": "OLD",
+ "companyName": "OLD Corp",
+ "analyzedAt": "2026-08-20T00:00:00Z",
+ "marketAsOf": "2026-08-19",
+ "asOfPrice": 100,
+ "dataMode": "live",
+ "skillVersion": "equity-research-v0.15.1",
+ "score": 0,
+ "confidence": 50,
+ "verdict": "Watch",
+ "scenarios": [],
+ "highlights": [
+  "Cited strength"
+ ],
+ "risks": [
+  "Cited risk"
+ ],
+ "catalysts": [],
+ "managementCredibility": [],
+ "thesisKillers": [
+  "Cash runs out before profitability"
+ ],
+ "analysts": [],
+ "optionIdeas": [],
+ "notes": [],
+ "scores": {},
+ "expectedReturn12m": {
+  "low": 0,
+  "high": 0
+ },
+ "citations": [
+  {
+   "url": "https://issuer.example/1",
+   "title": "Source 1",
+   "source": "Issuer",
+   "publishedAt": "2026-08-01",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  },
+  {
+   "url": "https://issuer.example/2",
+   "title": "Source 2",
+   "source": "Issuer",
+   "publishedAt": "2026-08-01",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  },
+  {
+   "url": "https://issuer.example/3",
+   "title": "Source 3",
+   "source": "Issuer",
+   "publishedAt": "2026-08-01",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  }
+ ],
+ "investmentCase": {
+  "factors": {
+   "growth": {
+    "rating": "Strong",
+    "reason": "growth: strong on the cited filings.",
+    "evidenceDate": "2026-08-10",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "cash": {
+    "rating": "Strong",
+    "reason": "cash: strong on the cited filings.",
+    "evidenceDate": "2026-08-10",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "valuation": {
+    "rating": "Strong",
+    "reason": "valuation: strong on the cited filings.",
+    "evidenceDate": "2026-08-10",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "competition": {
+    "rating": "Strong",
+    "reason": "competition: strong on the cited filings.",
+    "evidenceDate": "2026-08-10",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "execution": {
+    "rating": "Strong",
+    "reason": "execution: strong on the cited filings.",
+    "evidenceDate": "2026-08-10",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "market": {
+    "rating": "Strong",
+    "reason": "market: strong on the cited filings.",
+    "evidenceDate": "2026-08-10",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   }
+  },
+  "valuationBasis": "Peer comparison",
+  "valuationBenchmark": "",
+  "growthOutlook": "",
+  "strongestCounterargument": "",
+  "timing": "",
+  "changeMind": "Revisit if cash burn rises."
+ }
+}

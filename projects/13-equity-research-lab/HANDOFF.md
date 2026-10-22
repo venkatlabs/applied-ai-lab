@@ -78,6 +78,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Log
 
+- 2026-10-22 Claude: from the Instagram-learnings digest, added report quality checks (source coverage, date consistency, cost/time) and seven fixed evaluation fixtures run in CI, plus a free historical range simulation per report. docs/REPORT_QUALITY_AND_RANGE_2026-10-22.md. Day-trader skill pack deliberately not installed.
+
 - 2026-10-21 Claude: resumed. Unified holdings advice and stock action labels on `researchOutcome` (lib/outcome.ts); outcome now tolerates archived reports missing optional text fields. 292 tests.
 
 - 2026-10-20 Claude: Watch features (triggers with status and goalpost log, calendar, daily no-LLM monitor via Vercel Cron, weekly digest, capped refresh of stocks whose dated test passed). Migration 008. Needs CRON_SECRET.

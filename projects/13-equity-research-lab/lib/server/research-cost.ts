@@ -3,7 +3,7 @@ import type {UsageAttempt,ReportCost} from '../cost-types';
 const context=new AsyncLocalStorage<UsageAttempt[]>();
 export async function withCosts<T>(work:()=>Promise<T>):Promise<{value:T;cost:ReportCost}>{
  const attempts:UsageAttempt[]=[];
- return context.run(attempts,async()=>{const value=await work();const complete=attempts.length>0&&attempts.every(a=>a.estimatedUSD!==undefined);return {value,cost:{attempts,complete,estimatedUSD:complete?attempts.reduce((v,a)=>v+a.estimatedUSD!,0):null,note:'Recorded model usage for this generation only. Cached company evidence may have been generated earlier. Provider subscriptions and optional follow-up research are excluded. Dollar totals require configured, dated prices for every attempt; missing usage is never treated as zero.'}};});
+ return context.run(attempts,async()=>{const started=Date.now();const value=await work();const complete=attempts.length>0&&attempts.every(a=>a.estimatedUSD!==undefined);return {value,cost:{durationMs:Date.now()-started,attempts,complete,estimatedUSD:complete?attempts.reduce((v,a)=>v+a.estimatedUSD!,0):null,note:'Recorded model usage for this generation only. Cached company evidence may have been generated earlier. Provider subscriptions and optional follow-up research are excluded. Dollar totals require configured, dated prices for every attempt; missing usage is never treated as zero.'}};});
 }
 export function startUsage(purpose:string,model:string){const attempt:UsageAttempt={purpose,model,status:'started'};context.getStore()?.push(attempt);return attempt;}
 export function recordUsage(a:UsageAttempt,payload:any){
