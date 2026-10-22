@@ -1,0 +1,74 @@
+{
+ "now": "2026-10-21T12:00:00Z",
+ "fixtures": [
+  {
+   "file": "compounder-complete.json",
+   "expect": {
+    "verdict": "Buy / Add",
+    "confidence": "High",
+    "scoreMin": 70,
+    "hurdleClears": true,
+    "coverageMinPct": 100,
+    "dateIssues": 0
+   }
+  },
+  {
+   "file": "cyclical-improving.json",
+   "expect": {
+    "verdict": "Hold",
+    "confidence": "High",
+    "scoreMin": 50,
+    "scoreMax": 69,
+    "hurdleClears": false,
+    "coverageMinPct": 100,
+    "dateIssues": 0
+   }
+  },
+  {
+   "file": "sentiment-vs-fundamentals.json",
+   "expect": {
+    "verdict": "Trim",
+    "confidence": "High",
+    "scoreMax": 39,
+    "coverageMinPct": 100,
+    "dateIssues": 0
+   }
+  },
+  {
+   "file": "missing-evidence-stale-price.json",
+   "expect": {
+    "verdict": "Hold",
+    "confidence": "Low",
+    "coverageMinPct": 100,
+    "dateIssues": 0
+   }
+  },
+  {
+   "file": "distress-adverse.json",
+   "expect": {
+    "verdict": "Sell / Avoid",
+    "confidence": "High",
+    "scoreMax": 29,
+    "coverageMinPct": 100,
+    "dateIssues": 0
+   }
+  },
+  {
+   "file": "stale-report.json",
+   "expect": {
+    "verdict": "Buy / Add",
+    "needsRefresh": true,
+    "coverageMinPct": 100,
+    "dateIssues": 0
+   }
+  },
+  {
+   "file": "date-inconsistency.json",
+   "expect": {
+    "verdict": "Hold",
+    "coverageMinPct": 100,
+    "dateIssues": 6
+   }
+  }
+ ]
+}

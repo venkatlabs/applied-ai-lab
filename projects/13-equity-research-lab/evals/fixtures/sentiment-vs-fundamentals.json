@@ -1,0 +1,142 @@
+{
+ "id": "fx-s",
+ "ticker": "SNT",
+ "companyName": "SNT Corp",
+ "analyzedAt": "2026-10-15T00:00:00Z",
+ "marketAsOf": "2026-10-14",
+ "asOfPrice": 100,
+ "dataMode": "live",
+ "skillVersion": "equity-research-v0.15.1",
+ "score": 0,
+ "confidence": 50,
+ "verdict": "Watch",
+ "scenarios": [],
+ "highlights": [
+  "Cited strength"
+ ],
+ "risks": [
+  "Cited risk"
+ ],
+ "catalysts": [],
+ "managementCredibility": [],
+ "thesisKillers": [
+  "Cash runs out before profitability"
+ ],
+ "analysts": [],
+ "optionIdeas": [],
+ "notes": [],
+ "scores": {},
+ "expectedReturn12m": {
+  "low": 0,
+  "high": 0
+ },
+ "citations": [
+  {
+   "url": "https://issuer.example/1",
+   "title": "Source 1",
+   "source": "Issuer",
+   "publishedAt": "2026-09-20",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  },
+  {
+   "url": "https://issuer.example/2",
+   "title": "Source 2",
+   "source": "Issuer",
+   "publishedAt": "2026-09-20",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  },
+  {
+   "url": "https://issuer.example/3",
+   "title": "Source 3",
+   "source": "Issuer",
+   "publishedAt": "2026-09-20",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  }
+ ],
+ "investmentCase": {
+  "factors": {
+   "growth": {
+    "rating": "Mixed",
+    "reason": "growth: mixed on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "cash": {
+    "rating": "Weak",
+    "reason": "cash: weak on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "valuation": {
+    "rating": "Very weak",
+    "reason": "valuation: very weak on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "competition": {
+    "rating": "Weak",
+    "reason": "competition: weak on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "execution": {
+    "rating": "Weak",
+    "reason": "execution: weak on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "market": {
+    "rating": "Strong",
+    "reason": "market: strong on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   }
+  },
+  "valuationBasis": "Peer comparison",
+  "valuationBenchmark": "",
+  "growthOutlook": "",
+  "strongestCounterargument": "",
+  "timing": "",
+  "changeMind": "Revisit if cash burn rises."
+ },
+ "currentAffairs": {
+  "events": [
+   {
+    "rank": 1,
+    "headline": "Upbeat coverage after product demo",
+    "scope": "Company",
+    "evidenceKind": "Direct company evidence",
+    "eventDate": "2026-10-10",
+    "publishedDate": "2026-10-10",
+    "source": "https://issuer.example/1",
+    "direction": "Positive",
+    "mechanism": "Could lift sentiment.",
+    "uncertainty": "Medium",
+    "sourceTitle": "t",
+    "sourceName": "s",
+    "sourceTier": 1,
+    "retrievedAt": "2026-10-15T10:00:00Z",
+    "ageDays": 5,
+    "stale": false,
+    "warnings": []
+   }
+  ],
+  "gaps": [],
+  "removed": 0
+ }
+}
