@@ -11,6 +11,7 @@ import { ExecutiveSummary } from "./ExecutiveSummary";
 import { StockHistory } from "./StockHistory";
 import { StockTriggers } from "./StockTriggers";
 import { ReportQuality } from "./ReportQuality";
+import { HistoricalRange } from "./HistoricalRange";
 import { DecisionHeader } from "./DecisionHeader";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { CurrentAffairsPanel } from "./CurrentAffairsPanel";
@@ -55,6 +56,7 @@ export function ResearchView({ run }: { run: ResearchRun }) {
     <ScoreBreakdown run={run} />
     <CurrentAffairsPanel run={run} />
     <StockHistory ticker={run.ticker} currentId={run.id} />
+    <HistoricalRange run={run} />
     <ReportQuality run={run} />
     <ScenarioDistribution key={run.id} run={run} />
     <ThesisReviewPanel run={run} />
