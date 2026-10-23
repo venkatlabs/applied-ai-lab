@@ -71,7 +71,7 @@
       "topic": "Open office noise"
     },
     "b01-nap-negotiation": {
-      "status": "pending_review",
+      "status": "approved",
       "history": [
         {
           "status": "rendered",
@@ -86,6 +86,11 @@
         {
           "status": "pending_review",
           "at": "2026-10-14T15:02:04+00:00",
+          "note": ""
+        },
+        {
+          "status": "approved",
+          "at": "2026-10-23T03:57:28+00:00",
           "note": ""
         }
       ],
