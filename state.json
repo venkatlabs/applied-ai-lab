@@ -71,7 +71,7 @@
       "topic": "Open office noise"
     },
     "b01-nap-negotiation": {
-      "status": "approved",
+      "status": "published",
       "history": [
         {
           "status": "rendered",
@@ -92,6 +92,11 @@
           "status": "approved",
           "at": "2026-10-23T03:57:28+00:00",
           "note": ""
+        },
+        {
+          "status": "published",
+          "at": "2026-10-23T04:12:23+00:00",
+          "note": "https://youtu.be/1u2S_74P34k"
         }
       ],
       "title": "Not now. Meetings. 😂",
@@ -129,7 +134,9 @@
         }
       ],
       "seconds": 20,
-      "topic": "Not now. Meetings."
+      "topic": "Not now. Meetings.",
+      "publishAt": "2026-10-24T21:30:00Z",
+      "youtube_id": "1u2S_74P34k"
     },
     "b02-grocery-heist": {
       "status": "pending_review",
