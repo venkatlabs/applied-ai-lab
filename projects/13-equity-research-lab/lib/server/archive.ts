@@ -24,6 +24,16 @@ export async function claimWorkspace(token: string | undefined, accountHash: str
   if (error) throw new Error("Could not attach earlier reports to this account.");
   return typeof data === "number" ? data : 0;
 }
+type Ctx = { owner: string; db: NonNullable<ReturnType<typeof database>> };
+/** Save for an explicit owner: used by scheduled jobs that have no browser session. */
+export async function saveSnapshotFor(ctx: Ctx, run: ResearchRun): Promise<ResearchRun> {
+  if (run.dataMode === "demo") return { ...run, storage: "browser" };
+  try {
+    const saved = { ...run, storage: "cloud" as const };
+    const { error } = await ctx.db.from("equity_snapshots").insert({ id: run.id, owner_hash: ctx.owner, ticker: run.ticker, analyzed_at: run.analyzedAt, payload: saved });
+    return error ? { ...run, storage: "unavailable" } : saved;
+  } catch { return { ...run, storage: "unavailable" }; }
+}
 export async function saveSnapshot(run: ResearchRun): Promise<ResearchRun> {
   if (run.dataMode === "demo") return { ...run, storage: "browser" };
   try {
@@ -74,4 +84,11 @@ export async function latestReports(symbols?: string[]): Promise<Record<string, 
   const out: Record<string, ResearchRun> = {};
   for (const row of data ?? []) { const run = row.payload as ResearchRun; if (run.dataMode !== "demo" && !out[run.ticker]) out[run.ticker] = run; }
   return out;
+}
+
+/** Remember which account this is so scheduled jobs can prepare work for it. Best effort. */
+export async function recordAccount(ownerHash: string, email: string): Promise<void> {
+  const db = database();
+  if (!db) return;
+  await db.from("equity_accounts").upsert({ owner_hash: ownerHash, email: email.toLowerCase(), last_login_at: new Date().toISOString() }, { onConflict: "owner_hash" });
 }

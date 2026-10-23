@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FLOW_COOKIE, SESSION_COOKIE, SESSION_SECONDS, accountOwnerHash, authConfig, cookieOptions, cookieValue, finishLogin } from "@/lib/server/auth";
-import { claimWorkspace } from "@/lib/server/archive";
+import { claimWorkspace, recordAccount } from "@/lib/server/archive";
 
 export async function GET(request: NextRequest) {
   const cfg = authConfig();
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
   if (!result.ok) return fail(result.reason);
   // Best effort: attach reports from this browser's anonymous workspace to the account.
   await claimWorkspace(cookieValue(request.headers.get("cookie"), "research_workspace"), await accountOwnerHash(result.user.sub)).catch(() => undefined);
+  await recordAccount(await accountOwnerHash(result.user.sub), result.user.email).catch(() => undefined);
   const response = NextResponse.redirect(new URL(result.next, request.url));
   response.cookies.set(SESSION_COOKIE, result.session, cookieOptions(secure, SESSION_SECONDS));
   response.cookies.set(FLOW_COOKIE, "", cookieOptions(secure, 0));

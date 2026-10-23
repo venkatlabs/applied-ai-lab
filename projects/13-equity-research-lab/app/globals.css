@@ -52,3 +52,4 @@ table.breakdown th,table.breakdown td{padding:.4rem .5rem;border-bottom:1px soli
 .trigger-list,.alert-list{list-style:none;padding:0;margin:12px 0}.trigger,.alert-list li{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}.alert-list li{display:block}
 .trigger p,.alert-list p{margin:4px 0}.trig-kill{border-color:#9b3b3b;color:#f2a1a1}.trig-upgrade{border-color:#2f7d4b;color:#7ee2a2}.status-watch{border-color:#8a6a1f;color:#f0c874}.status-tripped{background:#3d1a1a;border-color:#9b3b3b;color:#f2a1a1}.goalpost{color:#f0c874}
 @media(max-width:650px){.trigger{grid-template-columns:1fr}}
+.morning{margin:18px 0}.morning h2{margin-top:6px}.morning h3{margin-top:18px}.brief-row{margin:8px 0}.brief-concentration .warning{margin:8px 0}

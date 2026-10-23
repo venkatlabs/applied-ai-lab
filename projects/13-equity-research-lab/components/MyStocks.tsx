@@ -9,6 +9,7 @@ import { loadChecks, runChecks } from '@/lib/watchlist';
 import { loadFollowed, removeFollowed, saveFollowed } from '@/lib/followed';
 import { buildStockRows, researchQueue, summarize, type StockRow } from '@/lib/stock-list';
 import { useResearchRunner } from './ResearchRunner';
+import { MorningBrief } from './MorningBrief';
 import type { ResearchRun } from '@/lib/types';
 
 type Budget = { metered: boolean; remaining: number; cap: number; reason?: string };
@@ -83,6 +84,7 @@ export function MyStocks() {
   return <section className="my-stocks" aria-labelledby="my-stocks-heading">
     <div className="hero compact"><div><p className="eyebrow">MY STOCKS</p><h1 id="my-stocks-heading">What should I do with each stock?</h1>
       <p className="lede">Every stock you own or follow, with one clear research verdict, how confident we are, and when it was last checked.</p></div></div>
+    <MorningBrief />
     {!synced && <p className="warning" role="status">Your followed list is only saved in this browser right now. Sign in and check the database setup to keep it across devices.</p>}
     {loaded && <div className="scenario-grid stock-summary">
       <div className="metric"><strong>{sum.researched}/{sum.total}</strong><span>stocks with a verdict</span></div>

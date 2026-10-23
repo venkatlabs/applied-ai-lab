@@ -78,6 +78,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Log
 
+- 2026-10-23 Claude: morning preparation job (Vercel Cron 12:00 UTC): fresh reports on the 3 most concentrated stocks plus 2 new names across industries, a percent-only brief with deconcentration math at the top of My stocks, verdict-change alerts. Migration 009. Off until MORNING_RESEARCH_ENABLED=true. Digest cron folded into the Sunday morning run (two crons total). docs/MORNING_PREP_2026-10-23.md.
+
 - 2026-10-22 Claude: from the Instagram-learnings digest, added report quality checks (source coverage, date consistency, cost/time) and seven fixed evaluation fixtures run in CI, plus a free historical range simulation per report. docs/REPORT_QUALITY_AND_RANGE_2026-10-22.md. Day-trader skill pack deliberately not installed.
 
 - 2026-10-21 Claude: resumed. Unified holdings advice and stock action labels on `researchOutcome` (lib/outcome.ts); outcome now tolerates archived reports missing optional text fields. 292 tests.
