@@ -139,7 +139,7 @@
       "youtube_id": "1u2S_74P34k"
     },
     "b02-grocery-heist": {
-      "status": "pending_review",
+      "status": "published",
       "history": [
         {
           "status": "rendered",
@@ -155,6 +155,16 @@
           "status": "pending_review",
           "at": "2026-10-16T14:46:48+00:00",
           "note": ""
+        },
+        {
+          "status": "approved",
+          "at": "2026-10-23T04:16:44+00:00",
+          "note": ""
+        },
+        {
+          "status": "published",
+          "at": "2026-10-23T04:16:46+00:00",
+          "note": "https://youtu.be/yCBW52lYxZ8"
         }
       ],
       "title": "Phase one: distraction 😂",
@@ -192,10 +202,12 @@
         }
       ],
       "seconds": 22,
-      "topic": "Phase one: distraction"
+      "topic": "Phase one: distraction",
+      "publishAt": "2026-10-25T21:30:00Z",
+      "youtube_id": "yCBW52lYxZ8"
     },
     "b03-dog-negotiation": {
-      "status": "pending_review",
+      "status": "published",
       "history": [
         {
           "status": "rendered",
@@ -211,6 +223,16 @@
           "status": "pending_review",
           "at": "2026-10-16T14:55:11+00:00",
           "note": ""
+        },
+        {
+          "status": "approved",
+          "at": "2026-10-23T04:16:44+00:00",
+          "note": ""
+        },
+        {
+          "status": "published",
+          "at": "2026-10-23T04:16:48+00:00",
+          "note": "https://youtu.be/vlOmscJDC7U"
         }
       ],
       "title": "That is my toy 😂",
@@ -248,7 +270,9 @@
         }
       ],
       "seconds": 20,
-      "topic": "That is my toy"
+      "topic": "That is my toy",
+      "publishAt": "2026-10-26T21:30:00Z",
+      "youtube_id": "vlOmscJDC7U"
     }
   },
   "spend_usd": 10.5,
