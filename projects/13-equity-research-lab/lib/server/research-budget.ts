@@ -1,4 +1,4 @@
-import { reserveUsage, usageStore } from './usage-budget';
+import { reserveUsage, releaseUsage, usageStore } from './usage-budget';
 import { archiveContext } from "./archive";
 import { database } from "./supabase";
 import type { ResearchRun } from "../types";
@@ -81,4 +81,10 @@ export async function claimResearchSlot() {
   const floor=await liveReportsToday();
   if(floor===null)throw new Error('Research paused: usage could not be verified.');
   await reserveUsage(usageStore(),'research',new Date().toISOString().slice(0,10),dailyCap(),floor);
+}
+
+/** Return the slot reserved by claimResearchSlot when the run provably spent nothing. */
+export async function releaseResearchSlot() {
+  if(!isLiveMode())return;
+  await releaseUsage(usageStore(),'research',new Date().toISOString().slice(0,10));
 }

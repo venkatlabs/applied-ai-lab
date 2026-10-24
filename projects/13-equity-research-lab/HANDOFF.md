@@ -78,6 +78,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Log
 
+- 2026-10-24 Claude: root cause of the failed morning reports = expired OpenAI API key (HTTP 401 expired_secret_key in the report notes). Added providerFailure() and guardedResearch(): a run that never reached the AI because of an expired key or no credit returns its budget slot, saves nothing and shows a clear fix; other unrated runs are kept only for the interactive flow. Owner action: create a new OpenAI key, set OPENAI_API_KEY in Vercel, redeploy.
+
 - 2026-10-24 Claude: first real Prepare-now run produced five reports in 0-4 s with no rating (AI steps failed fast; cause pending the report's provider note). Morning job now marks unrated runs as failed with the reason, stops the new-stock search when research is failing, a newer unrated run no longer hides an older rated report on My stocks, NBIS has a sector. Cron itself verified reaching the app (Saturday skip).
 
 - 2026-10-24 Claude: morning job split into plan / research-one / finalize; added the signed-in **Prepare my brief now** button (`/api/morning`) after Venkat's cron Run showed no log. Cron-not-firing diagnosis steps in docs/MORNING_PREP_2026-10-23.md.

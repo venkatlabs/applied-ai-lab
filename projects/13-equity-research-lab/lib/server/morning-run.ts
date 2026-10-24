@@ -4,7 +4,9 @@ import { toConnectedSnapshot } from "./snaptrade-snapshot";
 import { connectedHoldings } from "../connected-portfolio";
 import { runResearch } from "../research-engine";
 import { saveSnapshotFor } from "./archive";
-import { claimResearchSlot, researchBudget, sameDayReportFor } from "./research-budget";
+import { claimResearchSlot, releaseResearchSlot, researchBudget, sameDayReportFor } from "./research-budget";
+import { guardedResearch } from "./guarded-research";
+import { providerFailure } from "../provider-failure";
 import { runWeeklyDigest } from "./monitor-run";
 import type { Holdings } from "../holdings";
 import type { ResearchRun } from "../types";
@@ -102,7 +104,7 @@ export async function researchItem(owner: string, deps: MorningDeps, brief: Brie
     const { run, reused } = today ? { run: today, reused: true } : await deps.research(item.symbol);
     if (!isRated(run)) {
       // The run finished without an analysis (a provider failed). Do not present it as a result or a verdict change.
-      const why = (run.notes ?? []).map(n => n.replace(/^Provider note:\s*/, "")).filter(Boolean).slice(0, 2).join(" ").slice(0, 220);
+      const why = providerFailure(run)?.message ?? "";
       return { ...item, status: "failed", reportId: run.id, note: `The analysis did not finish. ${why || "No reason was recorded."}` };
     }
     const o = researchOutcome(run, now), weight = item.weightPct === null ? null : item.weightPct / 100;
@@ -165,7 +167,7 @@ export function morningDepsFor(owner: string, db: Db, now: Date, env: Env): Morn
     db, now, env,
     loadHoldings: () => realHoldings(env, now),
     remainingBudget: async () => { const b = await researchBudget(); return b.reason ? 0 : b.remaining; },
-    research: async ticker => { await claimResearchSlot(); const run = await runResearch(ticker); const saved = await saveSnapshotFor({ owner, db }, run); return { run: saved, reused: false }; },
+    research: async ticker => ({ run: await guardedResearch({ claim: claimResearchSlot, run: () => runResearch(ticker), save: r => saveSnapshotFor({ owner, db }, r), release: releaseResearchSlot, keepUnrated: false }), reused: false }),
   };
 }
 

@@ -6,7 +6,7 @@ import type { ResearchRun } from '../lib/types';
 const mocks = vi.hoisted(() => ({ run: vi.fn(), save: vi.fn(), read: vi.fn(), budget: vi.fn(), today: vi.fn(), claim: vi.fn() }));
 vi.mock('@/lib/research-engine', () => ({ runResearch: mocks.run }));
 vi.mock('@/lib/server/archive', () => ({ saveSnapshot: mocks.save, readSnapshots: mocks.read }));
-vi.mock('@/lib/server/research-budget', () => ({ researchBudget: mocks.budget, sameDayReport: mocks.today, claimResearchSlot: mocks.claim }));
+vi.mock('@/lib/server/research-budget', () => ({ researchBudget: mocks.budget, sameDayReport: mocks.today, claimResearchSlot: mocks.claim, releaseResearchSlot: vi.fn() }));
 import { GET, POST } from '../app/api/analyze/route';
 const run = { id: 'd3ba6b18-fd36-4d45-86d0-fa8b59ce3489', ticker: 'TEST', dataMode: 'live', asOfPrice: 100, analyzedAt: '2026-10-07T12:00:00Z', marketAsOf: '2026-10-07T10:00:00Z', investmentCase: {valuationBasis:'Unavailable',valuationBenchmark:'Missing', factors:Object.fromEntries(factorKeys.map(k=>[k,{rating:k==='valuation'?'Unknown':'Strong',sources:[],reason:'Missing',evidenceDate:'2026-10-07'}]))} } as unknown as ResearchRun;
 const request = (input: object) => new NextRequest('https://example.com/api/analyze', { method: 'POST', headers: { origin: 'https://example.com', 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
