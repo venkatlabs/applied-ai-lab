@@ -57,7 +57,7 @@ export function pickDiscovery(input: { dayIndex: number; exclude: Set<string>; c
 export const dayIndexOf = (day: string) => Math.floor(Date.parse(`${day}T00:00:00Z`) / 86400000);
 
 export type BriefItem = {
-  symbol: string; role: "concentrated" | "discovery"; status: "researched" | "reused" | "skipped" | "failed";
+  symbol: string; role: "concentrated" | "discovery"; status: "pending" | "researched" | "reused" | "skipped" | "failed";
   reportId: string | null; verdict: Outcome["verdict"] | null; confidence: Outcome["confidence"]; score: number | null;
   previousVerdict: string | null; changed: boolean; weightPct: number | null; sector: string;
   lines: string[]; note?: string; costUSD: number | null; seconds: number | null;
@@ -83,11 +83,12 @@ export function describeItem(o: Outcome, weight: number | null, previous: string
 }
 
 export function summariseBrief(items: BriefItem[], extra: string[] = []): { status: Brief["status"]; summary: string } {
+  const pending = items.filter(i => i.status === "pending").length;
   const done = items.filter(i => i.status === "researched" || i.status === "reused");
   const failed = items.filter(i => i.status === "failed");
   const changed = done.filter(i => i.changed);
-  const status: Brief["status"] = !items.length ? "skipped" : done.length === 0 ? "failed" : failed.length || items.some(i => i.status === "skipped") ? "partial" : "complete";
-  const bits = [`${done.length} of ${items.length} stocks ready`, changed.length ? `${changed.length} verdict change${changed.length === 1 ? "" : "s"}: ${changed.map(c => c.symbol).join(", ")}` : "no verdict changes", ...extra];
+  const status: Brief["status"] = !items.length ? "skipped" : pending > 0 ? "partial" : done.length === 0 ? "failed" : failed.length || items.some(i => i.status === "skipped") ? "partial" : "complete";
+  const bits = [`${done.length} of ${items.length} stocks ready${pending ? ` (${pending} still being prepared)` : ""}`, changed.length ? `${changed.length} verdict change${changed.length === 1 ? "" : "s"}: ${changed.map(c => c.symbol).join(", ")}` : "no verdict changes", ...extra];
   return { status, summary: bits.join(" · ") + "." };
 }
 

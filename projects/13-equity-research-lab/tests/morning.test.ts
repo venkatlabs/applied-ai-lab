@@ -87,6 +87,7 @@ function fakeDb() {
     const b: any = new Proxy({}, { get: (_t, prop: string) => {
       if (prop === "then") return (resolve: (v: unknown) => void) => { if (op !== "select") calls.push({ table, op, payload }); resolve({ data: op === "select" ? tables[table] ?? [] : null, error: null }); };
       if (["insert", "update", "upsert", "delete"].includes(prop)) return (p?: unknown) => builder(table, prop, p);
+      if (prop === "maybeSingle" || prop === "single") return () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: (tables[table] ?? [])[0] ?? null, error: null }) });
       return () => b;
     } });
     return b;
@@ -164,5 +165,70 @@ describe("runMorningJob gating", () => {
     tables = { equity_accounts: [{ owner_hash: owner, email: "Me@X.com" }, { owner_hash: "p".repeat(64), email: "other@x.com" }] };
     const { morningOwners } = await import("../lib/server/morning-run");
     expect(await morningOwners(fakeDb() as never, { OWNER_EMAILS: "me@x.com" })).toEqual([owner]);
+  });
+});
+
+describe("on-demand steps", () => {
+  const stubDeps = (research: (t: string) => Promise<{ run: ResearchRun; reused: boolean }>) => ({
+    db: fakeDb() as never, now, env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, research,
+  });
+  it("planning spends nothing and lists every stock as waiting, with weights and the previous verdict", async () => {
+    vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
+    tables = { equity_snapshots: [{ ticker: "NVDA", payload: mkRun("NVDA", "Strong", { analyzedAt: "2026-10-01T00:00:00Z", marketAsOf: "2026-09-30" }) }], equity_followed: [] };
+    const { planMorning } = await import("../lib/server/morning-run");
+    const research = vi.fn();
+    const brief = await planMorning(owner, stubDeps(research));
+    expect(research).not.toHaveBeenCalled();
+    expect(brief.items.every(i => i.status === "pending")).toBe(true);
+    expect(brief.items.filter(i => i.role === "concentrated").map(i => i.symbol)).toEqual(["AMZN", "NBIS", "NVDA"]);
+    expect(brief.items[0].weightPct).toBe(60); expect(brief.items.find(i => i.symbol === "NVDA")!.previousVerdict).toBe("Buy / Add");
+    expect(brief.status).toBe("partial"); expect(brief.summary).toContain("still being prepared");
+  });
+  it("researching one waiting stock updates only that stock and respects an empty budget", async () => {
+    vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
+    tables = { equity_snapshots: [], equity_followed: [] };
+    const { planMorning, researchItem, finalizeBrief } = await import("../lib/server/morning-run");
+    const deps = stubDeps(async t => ({ run: mkRun(t, "Weak"), reused: false }));
+    const brief = await planMorning(owner, deps);
+    const amzn = brief.items.find(i => i.symbol === "AMZN")!;
+    const done = await researchItem(owner, deps, brief, amzn, { left: 1 });
+    expect(done).toMatchObject({ status: "researched", verdict: "Trim", reportId: "id-AMZN" }); expect(done.lines[0]).toContain("Trim");
+    const skipped = await researchItem(owner, deps, brief, brief.items.find(i => i.symbol === "NBIS")!, { left: 0 });
+    expect(skipped).toMatchObject({ status: "skipped", note: expect.stringContaining("budget") });
+    const next = finalizeBrief({ ...brief, items: brief.items.map(i => i.symbol === "AMZN" ? done : i) });
+    expect(next.cost.reports).toBe(1); expect(next.items.filter(i => i.status === "pending")).toHaveLength(brief.items.length - 1);
+  });
+});
+
+describe("/api/morning", () => {
+  const post = (body: unknown, origin = "https://lab.test") => new Request("https://lab.test/api/morning", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body) });
+  it("rejects foreign origins and bad steps, and asks to start first when there is no brief", async () => {
+    vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
+    vi.doMock("../lib/server/archive", () => ({ archiveContext: async () => ({ owner, db: fakeDb() }) }));
+    tables = { equity_briefs: [] };
+    const { POST } = await import("../app/api/morning/route");
+    expect((await POST(post({ step: "plan" }, "https://evil.test"))).status).toBe(403);
+    expect((await POST(post({ step: "nope" }))).status).toBe(400);
+    expect((await POST(post({ step: "research", symbol: "<x>" }))).status).toBe(400);
+    expect((await POST(post({ step: "research", symbol: "AMZN" }))).status).toBe(409);
+    vi.doUnmock("../lib/server/archive");
+  });
+  it("plans, then researches one stock and stores the updated brief", async () => {
+    vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
+    vi.doMock("../lib/server/archive", () => ({ archiveContext: async () => ({ owner, db: fakeDb() }) }));
+    const mod = await vi.importActual<typeof import("../lib/server/morning-run")>("../lib/server/morning-run");
+    vi.doMock("../lib/server/morning-run", () => ({ ...mod, morningDepsFor: () => stubDepsFor() }));
+    function stubDepsFor() { return { db: fakeDb() as never, now: new Date(), env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, research: async (t: string) => ({ run: mkRun(t, "Mixed"), reused: false }) }; }
+    tables = { equity_snapshots: [], equity_followed: [], equity_briefs: [] };
+    const { POST } = await import("../app/api/morning/route");
+    const planned = await (await POST(post({ step: "plan" }))).json();
+    expect(planned.brief.items.length).toBeGreaterThanOrEqual(3);
+    tables.equity_briefs = [{ payload: planned.brief }];
+    const res = await POST(post({ step: "research", symbol: "AMZN" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.brief.items.find((i: { symbol: string }) => i.symbol === "AMZN")).toMatchObject({ status: "researched", verdict: "Hold" });
+    expect(calls.filter(c => c.table === "equity_briefs").length).toBeGreaterThanOrEqual(2);
+    vi.doUnmock("../lib/server/archive"); vi.doUnmock("../lib/server/morning-run");
   });
 });

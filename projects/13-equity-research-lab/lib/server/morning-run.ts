@@ -31,16 +31,17 @@ async function inBatches<T, R>(items: T[], size: number, fn: (x: T) => Promise<R
   return out;
 }
 
-export async function runMorningForOwner(owner: string, deps: MorningDeps): Promise<Brief> {
-  const { db, now, env } = deps, clock = deps.clock ?? Date.now, started = clock();
-  const day = now.toISOString().slice(0, 10), notes: string[] = [];
-  const maxTotal = intEnv(env.MORNING_RESEARCH_MAX, 5, 1, 10), discoveryWanted = intEnv(env.MORNING_DISCOVERY, 2, 0, 5);
-  const pinned = (env.MORNING_PINNED ?? "").split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+type Budget = { left: number };
 
+/** Step 1: decide what to research and store a brief with every stock waiting. Reads holdings; spends nothing. */
+export async function planMorning(owner: string, deps: MorningDeps): Promise<Brief> {
+  const { db, now, env } = deps;
+  const day = now.toISOString().slice(0, 10), notes: string[] = [];
+  const discoveryWanted = intEnv(env.MORNING_DISCOVERY, 2, 0, 5);
+  const pinned = (env.MORNING_PINNED ?? "").split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
   const { holdings, notes: holdingNotes } = await deps.loadHoldings().catch(() => ({ holdings: null as Holdings | null, notes: ["Brokerage holdings could not be read."] }));
   notes.push(...holdingNotes);
 
-  // What to research: the most concentrated stocks first, then new names from different industries.
   let concentrated = holdings ? topConcentrated(holdings, 3, pinned) : [];
   if (!holdings) {
     const { data } = await db.from("equity_briefs").select("payload").eq("owner_hash", owner).order("day", { ascending: false }).limit(1);
@@ -56,38 +57,18 @@ export async function runMorningForOwner(owner: string, deps: MorningDeps): Prom
   const previousReports: ResearchRun[] = (reportRows.data ?? []).map(r => r.payload as ResearchRun).filter(r => r.dataMode !== "demo");
   const exclude = new Set<string>([...(followed.data ?? []).map(r => r.symbol as string), ...(recent.data ?? []).map(r => r.ticker as string), ...concentrated.map(c => c.symbol), ...(holdings?.positions ?? []).map(p => p.symbol)]);
   const discovery = pickDiscovery({ dayIndex: dayIndexOf(day), exclude, count: discoveryWanted });
-
-  let remaining = Math.min(maxTotal, await deps.remainingBudget());
   const clusters = holdings ? clusterWeights(holdings) : [];
-  const clusterPct = clusters[0]?.weight ?? null;
-  const weightOf = (s: string) => concentrated.find(c => c.symbol === s)?.weight ?? null;
 
-  const one = async (symbol: string, role: BriefItem["role"], sector: string): Promise<BriefItem> => {
-    const base: BriefItem = { symbol, role, status: "skipped", reportId: null, verdict: null, confidence: null, score: null, previousVerdict: null, changed: false, weightPct: null, sector, lines: [], costUSD: null, seconds: null };
+  const waiting = (symbol: string, role: BriefItem["role"], sector: string, weight: number | null): BriefItem => {
     const before = previousReports.find(r => r.ticker === symbol);
-    const prevVerdict = before ? researchOutcome(before, new Date(before.analyzedAt)).verdict : null;
-    try {
-      const today = await sameDayReportFor({ owner, db }, symbol);
-      if (!today && remaining <= 0) return { ...base, note: "Skipped: no research budget left today." };
-      if (!today) remaining--;
-      const { run, reused } = today ? { run: today, reused: true } : await deps.research(symbol);
-      const o = researchOutcome(run, now), weight = role === "concentrated" ? weightOf(symbol) : null;
-      const changed = !!prevVerdict && prevVerdict !== o.verdict && !(reused && before?.id === run.id);
-      return { ...base, status: reused ? "reused" : "researched", reportId: run.id, verdict: o.verdict, confidence: o.confidence, score: o.score, previousVerdict: prevVerdict, changed,
-        weightPct: weight === null ? null : Number((weight * 100).toFixed(1)),
-        lines: describeItem(o, weight, prevVerdict, sector, clusterPct, (AI_INFRASTRUCTURE as readonly string[]).includes(symbol)),
-        costUSD: run.cost?.estimatedUSD ?? null, seconds: typeof run.cost?.durationMs === "number" ? Math.round(run.cost.durationMs / 1000) : null };
-    } catch (e) { return { ...base, status: "failed", note: e instanceof Error ? e.message.slice(0, 200) : "Research failed." }; }
+    return { symbol, role, status: "pending", reportId: null, verdict: null, confidence: null, score: null, previousVerdict: before ? researchOutcome(before, new Date(before.analyzedAt)).verdict : null, changed: false,
+      weightPct: weight === null ? null : Number((weight * 100).toFixed(1)), sector, lines: [], costUSD: null, seconds: null };
   };
-
-  const items: BriefItem[] = await inBatches(concentrated, 3, c => one(c.symbol, "concentrated", sectorFor(c.symbol)));
-  if (discovery.length) {
-    if (clock() - started > FIRST_PHASE_MS) { notes.push("New-stock search was skipped: the concentrated stocks took too long."); }
-    else items.push(...await inBatches(discovery, 2, d => one(d.symbol, "discovery", d.sector)));
-  }
+  const items = [...concentrated.map(c => waiting(c.symbol, "concentrated", sectorFor(c.symbol), holdings ? c.weight : null)), ...discovery.map(d => waiting(d.symbol, "discovery", d.sector, null))];
 
   const all = holdings ? holdings.positions.filter(p => p.kind === "stock" && p.shares > 0).map(p => ({ symbol: p.symbol, weight: (p.shares * p.price) / holdings.totalValue })).sort((a, b) => b.weight - a.weight) : [];
   const sum = (n: number) => all.slice(0, n).reduce((a, b) => a + b.weight, 0);
+  const clusterPct = clusters[0]?.weight ?? null;
   const flags: string[] = [];
   if (all[0] && all[0].weight > 2 * LIMIT) flags.push(`${all[0].symbol} is ${(all[0].weight / LIMIT).toFixed(1)}× your ${Math.round(LIMIT * 100)}% single-stock planning limit.`);
   if (all.length >= 3 && sum(3) > 0.5) flags.push(`Your three largest stocks are ${Math.round(sum(3) * 100)}% of the portfolio.`);
@@ -98,13 +79,58 @@ export async function runMorningForOwner(owner: string, deps: MorningDeps): Prom
     clusters: clusters.map(c => ({ name: c.name, weightPct: Number((c.weight * 100).toFixed(1)), symbols: c.symbols })), flags,
   } : null;
   void COMFORT;
-  const spent = items.filter(i => i.status === "researched");
+  return finalizeBrief({ day, generatedAt: now.toISOString(), status: "partial", summary: "", concentration, items, cost: { estimatedUSD: null, reports: 0 }, notes });
+}
+
+/** Recompute status, summary and cost from the items. */
+export function finalizeBrief(brief: Brief): Brief {
+  const spent = brief.items.filter(i => i.status === "researched");
   const costKnown = spent.length > 0 && spent.every(i => i.costUSD !== null);
-  const { status, summary } = summariseBrief(items, flags.slice(0, 1));
-  const brief: Brief = { day, generatedAt: now.toISOString(), status, summary, concentration, items, cost: { estimatedUSD: costKnown ? Number(spent.reduce((a, i) => a + (i.costUSD ?? 0), 0).toFixed(2)) : null, reports: spent.length }, notes };
-  await db.from("equity_briefs").upsert({ owner_hash: owner, day, payload: brief }, { onConflict: "owner_hash,day" });
-  const changes = items.filter(i => i.changed && i.verdict);
-  if (changes.length) await db.from("equity_alerts").insert(changes.map(i => ({ owner_hash: owner, symbol: i.symbol, kind: "verdict", direction: i.verdict === "Buy / Add" ? "bull" : i.verdict === "Trim" || i.verdict === "Sell / Avoid" ? "bear" : "neutral", headline: `${i.symbol}: verdict changed from ${i.previousVerdict} to ${i.verdict}.`, detail: "From this morning's fresh report.", trigger_id: null })));
+  const { status, summary } = summariseBrief(brief.items, brief.concentration?.flags.slice(0, 1) ?? []);
+  return { ...brief, status, summary, cost: { estimatedUSD: costKnown ? Number(spent.reduce((a, i) => a + (i.costUSD ?? 0), 0).toFixed(2)) : null, reports: spent.length } };
+}
+
+/** Step 2: research one waiting stock (reusing today's report if there is one) and return the updated item. */
+export async function researchItem(owner: string, deps: MorningDeps, brief: Brief, item: BriefItem, budget: Budget): Promise<BriefItem> {
+  const { db, now } = deps;
+  const clusterPct = brief.concentration?.clusters[0] ? brief.concentration.clusters[0].weightPct / 100 : null;
+  try {
+    const today = await sameDayReportFor({ owner, db }, item.symbol);
+    if (!today && budget.left <= 0) return { ...item, status: "skipped", note: "Skipped: no research budget left today." };
+    if (!today) budget.left--;
+    const { run, reused } = today ? { run: today, reused: true } : await deps.research(item.symbol);
+    const o = researchOutcome(run, now), weight = item.weightPct === null ? null : item.weightPct / 100;
+    return { ...item, status: reused ? "reused" : "researched", reportId: run.id, verdict: o.verdict, confidence: o.confidence, score: o.score,
+      changed: !!item.previousVerdict && item.previousVerdict !== o.verdict,
+      lines: describeItem(o, weight, item.previousVerdict, item.sector, clusterPct, (AI_INFRASTRUCTURE as readonly string[]).includes(item.symbol)),
+      costUSD: run.cost?.estimatedUSD ?? null, seconds: typeof run.cost?.durationMs === "number" ? Math.round(run.cost.durationMs / 1000) : null, note: undefined };
+  } catch (e) { return { ...item, status: "failed", note: e instanceof Error ? e.message.slice(0, 200) : "Research failed." }; }
+}
+
+export async function saveBrief(owner: string, deps: Pick<MorningDeps, "db">, brief: Brief): Promise<void> {
+  await deps.db.from("equity_briefs").upsert({ owner_hash: owner, day: brief.day, payload: brief }, { onConflict: "owner_hash,day" });
+}
+export async function alertChanges(owner: string, deps: Pick<MorningDeps, "db">, items: BriefItem[]): Promise<void> {
+  const changes = items.filter(i => i.changed && i.verdict && (i.status === "researched"));
+  if (changes.length) await deps.db.from("equity_alerts").insert(changes.map(i => ({ owner_hash: owner, symbol: i.symbol, kind: "verdict", direction: i.verdict === "Buy / Add" ? "bull" : i.verdict === "Trim" || i.verdict === "Sell / Avoid" ? "bear" : "neutral", headline: `${i.symbol}: verdict changed from ${i.previousVerdict} to ${i.verdict}.`, detail: "From a fresh report in the morning brief.", trigger_id: null })));
+}
+
+/** All steps in one go, for the scheduled job. */
+export async function runMorningForOwner(owner: string, deps: MorningDeps): Promise<Brief> {
+  const { env } = deps, clock = deps.clock ?? Date.now, started = clock();
+  const maxTotal = intEnv(env.MORNING_RESEARCH_MAX, 5, 1, 10);
+  const planned = await planMorning(owner, deps);
+  const budget: Budget = { left: Math.min(maxTotal, await deps.remainingBudget()) };
+  const concentrated = planned.items.filter(i => i.role === "concentrated"), discovery = planned.items.filter(i => i.role === "discovery");
+  const items: BriefItem[] = await inBatches(concentrated, 3, i => researchItem(owner, deps, planned, i, budget));
+  const notes = [...planned.notes];
+  if (discovery.length) {
+    if (clock() - started > FIRST_PHASE_MS) { notes.push("New-stock search was skipped: the concentrated stocks took too long."); items.push(...discovery.map(d => ({ ...d, status: "skipped" as const, note: "Skipped: time ran short." }))); }
+    else items.push(...await inBatches(discovery, 2, d => researchItem(owner, deps, planned, d, budget)));
+  }
+  const brief = finalizeBrief({ ...planned, items, notes });
+  await saveBrief(owner, deps, brief);
+  await alertChanges(owner, deps, items);
   return brief;
 }
 
@@ -126,6 +152,16 @@ export async function morningOwners(db: Db, env: Env): Promise<string[]> {
   return accounts;
 }
 
+/** Real dependencies for one owner: brokerage read, shared research budget, paid research saved to that owner. */
+export function morningDepsFor(owner: string, db: Db, now: Date, env: Env): MorningDeps {
+  return {
+    db, now, env,
+    loadHoldings: () => realHoldings(env, now),
+    remainingBudget: async () => { const b = await researchBudget(); return b.reason ? 0 : b.remaining; },
+    research: async ticker => { await claimResearchSlot(); const run = await runResearch(ticker); const saved = await saveSnapshotFor({ owner, db }, run); return { run: saved, reused: false }; },
+  };
+}
+
 export async function runMorningJob(now = new Date(), env: Env = process.env) {
   const db = database(), day = now.toISOString().slice(0, 10), dow = now.getUTCDay();
   const usage = { owners: 0, reports: 0, failed: 0 };
@@ -140,12 +176,7 @@ export async function runMorningJob(now = new Date(), env: Env = process.env) {
     usage.owners = owners.length;
     if (!owners.length) parts.push("No signed-in owner account was found; sign in once to enable the morning brief.");
     for (const owner of owners) {
-      const brief = await runMorningForOwner(owner, {
-        db, now, env,
-        loadHoldings: () => realHoldings(env, now),
-        remainingBudget: async () => { const b = await researchBudget(); return b.reason ? 0 : b.remaining; },
-        research: async ticker => { await claimResearchSlot(); const run = await runResearch(ticker); const saved = await saveSnapshotFor({ owner, db }, run); return { run: saved, reused: false }; },
-      });
+      const brief = await runMorningForOwner(owner, morningDepsFor(owner, db, now, env));
       usage.reports += brief.cost.reports; usage.failed += brief.items.filter(i => i.status === "failed").length;
       parts.push(brief.summary);
     }
