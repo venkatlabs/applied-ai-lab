@@ -103,3 +103,8 @@ describe("hurdle view", () => {
     expect(hurdleView(undefined)).toBeNull();
   });
 });
+
+it("sector names cover AI-cloud holdings that the peer groups do not", async () => {
+  const { sectorFor } = await import("../lib/diversification");
+  expect(sectorFor("NBIS")).toBe("AI cloud infrastructure"); expect(sectorFor("AMZN")).toBe("Digital platforms"); expect(sectorFor("ZZZZ")).toBe("Unknown");
+});

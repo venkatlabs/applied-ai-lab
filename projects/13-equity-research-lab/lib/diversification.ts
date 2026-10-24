@@ -24,8 +24,10 @@ export type Diversification = {
   verdict: "Direct stock limits met" | "Exposure incomplete" | "Moderately concentrated" | "Highly concentrated" | "No stock positions";
 };
 
+// Names the peer groups do not cover but that matter for concentration.
+const EXTRA_SECTORS: Record<string, string> = { NBIS: "AI cloud infrastructure", CRWV: "AI cloud infrastructure", PLTR: "Software platforms", MU: "Semiconductors", TSM: "Semiconductors", INTC: "Semiconductors", MRVL: "Semiconductors", ARM: "Semiconductors", SMCI: "AI cloud infrastructure", RKLB: "Aerospace and defense", TSLA: "Autos and EVs" };
 export function sectorFor(symbol: string): string {
-  return peerGroup(symbol)?.sector ?? screenUniverse.find(s => s.symbol === symbol)?.sector ?? "Unknown";
+  return peerGroup(symbol)?.sector ?? screenUniverse.find(s => s.symbol === symbol)?.sector ?? EXTRA_SECTORS[symbol] ?? "Unknown";
 }
 
 export function diversification(h: Holdings, limits = DEFAULT_LIMITS): Diversification {

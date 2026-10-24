@@ -78,6 +78,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Log
 
+- 2026-10-24 Claude: first real Prepare-now run produced five reports in 0-4 s with no rating (AI steps failed fast; cause pending the report's provider note). Morning job now marks unrated runs as failed with the reason, stops the new-stock search when research is failing, a newer unrated run no longer hides an older rated report on My stocks, NBIS has a sector. Cron itself verified reaching the app (Saturday skip).
+
 - 2026-10-24 Claude: morning job split into plan / research-one / finalize; added the signed-in **Prepare my brief now** button (`/api/morning`) after Venkat's cron Run showed no log. Cron-not-firing diagnosis steps in docs/MORNING_PREP_2026-10-23.md.
 
 - 2026-10-23 Claude: morning preparation job (Vercel Cron 12:00 UTC): fresh reports on the 3 most concentrated stocks plus 2 new names across industries, a percent-only brief with deconcentration math at the top of My stocks, verdict-change alerts. Migration 009. Off until MORNING_RESEARCH_ENABLED=true. Digest cron folded into the Sunday morning run (two crons total). docs/MORNING_PREP_2026-10-23.md.

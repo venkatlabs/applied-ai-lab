@@ -8,6 +8,7 @@ import { claimResearchSlot, researchBudget, sameDayReportFor } from "./research-
 import { runWeeklyDigest } from "./monitor-run";
 import type { Holdings } from "../holdings";
 import type { ResearchRun } from "../types";
+import { isRated } from "../outcome";
 import {
   COMFORT, LIMIT, AI_INFRASTRUCTURE, clusterWeights, dayIndexOf, describeItem, pickDiscovery, sellFraction, sectorFor, summariseBrief, topConcentrated,
   researchOutcome, type Brief, type BriefItem,
@@ -60,7 +61,7 @@ export async function planMorning(owner: string, deps: MorningDeps): Promise<Bri
   const clusters = holdings ? clusterWeights(holdings) : [];
 
   const waiting = (symbol: string, role: BriefItem["role"], sector: string, weight: number | null): BriefItem => {
-    const before = previousReports.find(r => r.ticker === symbol);
+    const before = previousReports.find(r => r.ticker === symbol && isRated(r));
     return { symbol, role, status: "pending", reportId: null, verdict: null, confidence: null, score: null, previousVerdict: before ? researchOutcome(before, new Date(before.analyzedAt)).verdict : null, changed: false,
       weightPct: weight === null ? null : Number((weight * 100).toFixed(1)), sector, lines: [], costUSD: null, seconds: null };
   };
@@ -99,6 +100,11 @@ export async function researchItem(owner: string, deps: MorningDeps, brief: Brie
     if (!today && budget.left <= 0) return { ...item, status: "skipped", note: "Skipped: no research budget left today." };
     if (!today) budget.left--;
     const { run, reused } = today ? { run: today, reused: true } : await deps.research(item.symbol);
+    if (!isRated(run)) {
+      // The run finished without an analysis (a provider failed). Do not present it as a result or a verdict change.
+      const why = (run.notes ?? []).map(n => n.replace(/^Provider note:\s*/, "")).filter(Boolean).slice(0, 2).join(" ").slice(0, 220);
+      return { ...item, status: "failed", reportId: run.id, note: `The analysis did not finish. ${why || "No reason was recorded."}` };
+    }
     const o = researchOutcome(run, now), weight = item.weightPct === null ? null : item.weightPct / 100;
     return { ...item, status: reused ? "reused" : "researched", reportId: run.id, verdict: o.verdict, confidence: o.confidence, score: o.score,
       changed: !!item.previousVerdict && item.previousVerdict !== o.verdict,
@@ -125,7 +131,8 @@ export async function runMorningForOwner(owner: string, deps: MorningDeps): Prom
   const items: BriefItem[] = await inBatches(concentrated, 3, i => researchItem(owner, deps, planned, i, budget));
   const notes = [...planned.notes];
   if (discovery.length) {
-    if (clock() - started > FIRST_PHASE_MS) { notes.push("New-stock search was skipped: the concentrated stocks took too long."); items.push(...discovery.map(d => ({ ...d, status: "skipped" as const, note: "Skipped: time ran short." }))); }
+    if (concentrated.length && items.every(i => i.status === "failed")) { notes.push("New-stock search was skipped: research is failing, so no more of your budget was used."); items.push(...discovery.map(d => ({ ...d, status: "skipped" as const, note: "Skipped to protect your research budget." }))); }
+    else if (clock() - started > FIRST_PHASE_MS) { notes.push("New-stock search was skipped: the concentrated stocks took too long."); items.push(...discovery.map(d => ({ ...d, status: "skipped" as const, note: "Skipped: time ran short." }))); }
     else items.push(...await inBatches(discovery, 2, d => researchItem(owner, deps, planned, d, budget)));
   }
   const brief = finalizeBrief({ ...planned, items, notes });

@@ -78,3 +78,13 @@ it("tolerates archived reports with missing optional text fields", () => {
   expect(researchOutcome(r, now)).toMatchObject({ verdict: "Hold", changeMind: "" });
   expect(researchOutcome(run({}, { investmentCase: undefined, score: 55, highlights: undefined, risks: undefined, thesisKillers: undefined }), now).method).toBe("legacy");
 });
+
+it("a newer run with no rating never hides an older rated report, and says why it could not be rated", () => {
+  const rated = run({}, { id: "good", analyzedAt: "2026-10-10T00:00:00Z", marketAsOf: "2026-10-09" });
+  const failed = run({}, { id: "bad", analyzedAt: "2026-10-24T00:00:00Z", investmentCase: undefined, score: 0, notes: ["Live evidence loaded, but the AI synthesis failed."] });
+  expect(latestByTicker([rated, failed]).get("ABC")!.id).toBe("good");
+  expect(latestByTicker([failed]).get("ABC")!.id).toBe("bad");
+  expect(researchOutcome(failed, now)).toMatchObject({ verdict: "Not researched" });
+  expect(researchOutcome(failed, now).headline).toContain("analysis did not finish");
+  expect(researchOutcome({ ...failed, notes: [] } as ResearchRun, now).headline).toContain("older report");
+});

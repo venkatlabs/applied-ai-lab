@@ -232,3 +232,21 @@ describe("/api/morning", () => {
     vi.doUnmock("../lib/server/archive"); vi.doUnmock("../lib/server/morning-run");
   });
 });
+
+describe("runs whose analysis did not finish", () => {
+  const degraded = (ticker: string) => ({ ...mkRun(ticker, "Mixed"), investmentCase: undefined, score: 0, notes: ["Live evidence loaded, but the AI synthesis failed. No demo score or verdict was substituted.", "Provider note: OpenAI request failed (429)."] }) as unknown as ResearchRun;
+  it("are reported as failed with the reason, never as a verdict change, and stop the new-stock search", async () => {
+    vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
+    tables = { equity_snapshots: [{ ticker: "AMZN", payload: mkRun("AMZN", "Mixed", { analyzedAt: "2026-10-10T00:00:00Z", marketAsOf: "2026-10-09" }) }], equity_followed: [] };
+    const { runMorningForOwner } = await import("../lib/server/morning-run");
+    const asked: string[] = [];
+    const brief = await runMorningForOwner(owner, { db: fakeDb() as never, now, env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5,
+      research: async t => { asked.push(t); return { run: degraded(t), reused: false }; } });
+    expect(asked.sort()).toEqual(["AMZN", "NBIS", "NVDA"]);
+    const amzn = brief.items.find(i => i.symbol === "AMZN")!;
+    expect(amzn).toMatchObject({ status: "failed", changed: false, verdict: null }); expect(amzn.note).toContain("analysis did not finish"); expect(amzn.note).toContain("OpenAI request failed");
+    expect(brief.items.filter(i => i.role === "discovery").every(i => i.status === "skipped")).toBe(true);
+    expect(brief.notes.join(" ")).toContain("research is failing"); expect(brief.status).toBe("failed");
+    expect(calls.some(c => c.table === "equity_alerts")).toBe(false);
+  });
+});
