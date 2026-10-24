@@ -24,3 +24,9 @@ Each new report is one paid report, charged to the shared daily cap (`RESEARCH_D
 - Weights use broker-reported prices, which can lag by a day at one custodian; they are indicative.
 - New-stock ideas are a rotation, not a screen: they get a full report but no quick-valuation filter yet.
 - Verdicts are research outputs, not personal advice.
+
+## Prepare now (added 2026-10-24)
+My stocks → Morning brief → **Prepare my brief now** runs the same plan on demand, one stock at a time (`/api/morning`, signed-in only, same budget and caps), so each paid report stays inside the function time limit and any error shows on screen. Use it to test the pipeline, to finish a brief that a scheduled run left partial, or when the scheduler does not fire.
+
+## If the scheduled run does nothing
+The code answers correctly when called with the right secret (401 without it, 200 with it, locally verified). If Vercel's **Run** button shows no log line for `/api/cron/morning`, the request is not reaching the function. Check, in order: (1) Settings → Cron Jobs lists both jobs (they only register from a Production deployment of `main`); (2) Logs → filter by path `/api/cron/morning`; (3) whether Watch → Job health ever shows a "daily" price-monitor row, which proves cron reaches the app; (4) Deployment Protection: a protected deployment can block automated callers before the function runs (Vercel's *Protection Bypass for Automation* is the setting, and a GitHub Actions schedule is the alternative).
