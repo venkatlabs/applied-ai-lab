@@ -11,7 +11,7 @@ const sql = readdirSync(dir)
 
 describe("supabase migrations", () => {
   it("lock every table created in public to client roles", () => {
-    const created = [...sql.matchAll(/create table if not exists (?:public\.)?(\w+)/gi)].map((m) => m[1]);
+    const created = [...sql.matchAll(/create table (?:if not exists )?(?:public\.)?(\w+)/gi)].map((m) => m[1]);
     expect(created.length).toBeGreaterThan(0);
     for (const t of created) {
       const quoted = sql.includes(`'${t}'`) || new RegExp(`public\\.${t} enable row level security`, "i").test(sql);

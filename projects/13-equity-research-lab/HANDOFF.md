@@ -79,6 +79,7 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 ## Log
 
 - 2026-10-25 Claude: merged current main (93720a5) into `claude/supabase-rls-001-init` so PR #16 is mergeable; only HANDOFF.md conflicted, all newer log entries kept. tsc, 344 tests and build pass. Migration 005 still NOT applied to the live DB; awaiting Venkat's merge and migration approval.
+- 2026-10-25 Claude: addressed both PR #16 review threads. README deployment now lists migrations in order and calls out 005; the RLS guard regex now matches plain `create table`. tsc, 344 tests and build pass. Still NOT applied to the live DB; awaiting Venkat merge + migration approval.
 
 - 2026-10-24 Claude: root cause of the failed morning reports = expired OpenAI API key (HTTP 401 expired_secret_key in the report notes). Added providerFailure() and guardedResearch(): a run that never reached the AI because of an expired key or no credit returns its budget slot, saves nothing and shows a clear fix; other unrated runs are kept only for the interactive flow. Owner action: create a new OpenAI key, set OPENAI_API_KEY in Vercel, redeploy.
 
