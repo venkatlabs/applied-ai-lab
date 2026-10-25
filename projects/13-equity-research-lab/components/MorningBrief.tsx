@@ -37,6 +37,8 @@ export function MorningBrief() {
         setProgress(`Researching ${symbol} (${n + 1} of ${todo.length})… a few minutes each.`);
         current = await step({ step: 'research', symbol });
         setBrief(current);
+        const done = current.items.find(i => i.symbol === symbol);
+        if (done?.status === 'failed') { setError(`${symbol}: ${done.note ?? 'The analysis did not finish.'} Stopped to protect your research budget.`); break; }
       }
     } catch (e) { setError(e instanceof Error ? e.message : 'The brief could not be prepared.'); }
     finally { setBusy(false); setProgress(''); }

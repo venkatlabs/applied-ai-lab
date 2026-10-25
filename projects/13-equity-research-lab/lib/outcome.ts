@@ -59,6 +59,10 @@ const actions: Record<Verdict, { owned: string; notOwned: string }> = {
   "Not researched": { owned: "Research this stock before deciding.", notOwned: "Research this stock before deciding." },
 };
 
+/** A report that carries a rating: the current method, or an older saved score. A run whose analysis did not finish is not rated. */
+export const isRated = (run: ResearchRun) => !!run.investmentCase || (Number.isFinite(run.score) && run.score > 0);
+const analysisFailed = (run: ResearchRun) => (run.notes ?? []).some(n => /ai synthesis failed|stopped before ai synthesis|did not complete/i.test(n));
+
 export function researchOutcome(run: ResearchRun | undefined | null, now = new Date()): Outcome {
   if (!run) return empty("No research has been run for this stock yet.", ["A research report"]);
   if (run.dataMode === "demo") return empty("This is demo data, not a real report.", ["A live research report"]);
@@ -79,7 +83,10 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
   if (!thesis) {
     // Older reports: map their own saved score with low confidence instead of hiding them.
     const legacy = Number.isFinite(run.score) && run.score > 0 ? Math.round(run.score) : null;
-    if (legacy === null) return { ...empty("This older report has no rating. Run fresh research for a clear outcome.", ["A report using the current method"]), analyzedAt: run.analyzedAt, ageDays, needsRefresh: true };
+    if (legacy === null) {
+      const failed = analysisFailed(run);
+      return { ...empty(failed ? "This report could not be rated because its analysis did not finish. Run research again." : "This older report has no rating. Run fresh research for a clear outcome.", [failed ? "A completed analysis" : "A report using the current method"]), analyzedAt: run.analyzedAt, ageDays, needsRefresh: true };
+    }
     const { verdict, lean } = verdictForScore(legacy);
     return {
       verdict, lean, score: legacy, confidence: "Low", confidencePoints: 25, method: "legacy",
@@ -126,9 +133,10 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
   };
 }
 
-/** Latest report per ticker. */
+/** Latest report per ticker. A newer run that failed to produce a rating never hides an older rated report. */
 export function latestByTicker(runs: ResearchRun[]): Map<string, ResearchRun> {
   const out = new Map<string, ResearchRun>();
-  for (const r of runs) if (r.dataMode !== "demo" && (!out.has(r.ticker) || out.get(r.ticker)!.analyzedAt < r.analyzedAt)) out.set(r.ticker, r);
+  const better = (a: ResearchRun, b: ResearchRun) => isRated(a) !== isRated(b) ? isRated(a) : a.analyzedAt > b.analyzedAt;
+  for (const r of runs) if (r.dataMode !== "demo" && (!out.has(r.ticker) || better(r, out.get(r.ticker)!))) out.set(r.ticker, r);
   return out;
 }
