@@ -1,0 +1,109 @@
+{
+ "id": "fx-m",
+ "ticker": "MIS",
+ "companyName": "MIS Corp",
+ "analyzedAt": "2026-10-15T00:00:00Z",
+ "marketAsOf": "2026-08-01",
+ "asOfPrice": 100,
+ "dataMode": "live",
+ "skillVersion": "equity-research-v0.15.1",
+ "score": 0,
+ "confidence": 50,
+ "verdict": "Watch",
+ "scenarios": [],
+ "highlights": [
+  "Cited strength"
+ ],
+ "risks": [
+  "Cited risk"
+ ],
+ "catalysts": [],
+ "managementCredibility": [],
+ "thesisKillers": [
+  "Cash runs out before profitability"
+ ],
+ "analysts": [],
+ "optionIdeas": [],
+ "notes": [],
+ "scores": {},
+ "expectedReturn12m": {
+  "low": 0,
+  "high": 0
+ },
+ "citations": [
+  {
+   "url": "https://issuer.example/1",
+   "title": "Source 1",
+   "source": "Issuer",
+   "publishedAt": "2026-09-20",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  },
+  {
+   "url": "https://issuer.example/2",
+   "title": "Source 2",
+   "source": "Issuer",
+   "publishedAt": "2026-09-20",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  },
+  {
+   "url": "https://issuer.example/3",
+   "title": "Source 3",
+   "source": "Issuer",
+   "publishedAt": "2026-09-20",
+   "retrievedAt": "2026-10-15T10:00:00Z",
+   "tier": 1
+  }
+ ],
+ "investmentCase": {
+  "factors": {
+   "growth": {
+    "rating": "Strong",
+    "reason": "growth: strong on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "cash": {
+    "rating": "Mixed",
+    "reason": "cash: mixed on the cited filings.",
+    "evidenceDate": "2026-09-15",
+    "sources": [
+     "https://issuer.example/1"
+    ]
+   },
+   "valuation": {
+    "rating": "Unknown",
+    "reason": "valuation: unknown on the cited filings.",
+    "evidenceDate": "",
+    "sources": []
+   },
+   "competition": {
+    "rating": "Unknown",
+    "reason": "competition: unknown on the cited filings.",
+    "evidenceDate": "",
+    "sources": []
+   },
+   "execution": {
+    "rating": "Unknown",
+    "reason": "execution: unknown on the cited filings.",
+    "evidenceDate": "",
+    "sources": []
+   },
+   "market": {
+    "rating": "Unknown",
+    "reason": "market: unknown on the cited filings.",
+    "evidenceDate": "",
+    "sources": []
+   }
+  },
+  "valuationBasis": "Unavailable",
+  "valuationBenchmark": "",
+  "growthOutlook": "",
+  "strongestCounterargument": "",
+  "timing": "",
+  "changeMind": "Revisit if cash burn rises."
+ }
+}

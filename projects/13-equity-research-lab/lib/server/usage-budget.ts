@@ -21,6 +21,15 @@ export async function reserveUsage(store: UsageStore, provider: string, day: str
   throw new Error('Usage reservation is busy. No provider request was started; try again shortly.');
 }
 
+/** Give back one reservation when the provider call provably never ran (for example an expired key). Never below zero. */
+export async function releaseUsage(store: UsageStore, provider: string, day: string) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const previous = await store.read(provider, day);
+    if (!previous || previous <= 0) return;
+    if (await store.compareAndSet(provider, day, previous, previous - 1)) return;
+  }
+}
+
 export function usageStore(): UsageStore {
   const db = database();
   if (!db) throw new Error('Provider calls are paused because usage storage is unavailable.');

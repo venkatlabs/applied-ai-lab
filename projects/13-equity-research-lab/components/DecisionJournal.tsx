@@ -5,10 +5,10 @@ import { addJournal, gradeEntry, loadJournal, removeJournal, type JournalEntry }
 import { loadChecks } from '@/lib/watchlist';
 import type { QuickCheck } from '@/lib/quick-check';
 
-function DecisionJournalContent({ suggestions = {} }: { suggestions?: Record<string, string> }) {
+function DecisionJournalContent({ suggestions = {}, focusSymbol = '' }: { suggestions?: Record<string, string>; focusSymbol?: string }) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [checks, setChecks] = useState<Record<string, QuickCheck>>({});
-  const [f, setF] = useState({ symbol: '', action: 'Bought' as JournalEntry['action'], price: '', amount: '', reason: '' });
+  const [f, setF] = useState({ symbol: focusSymbol, action: 'Bought' as JournalEntry['action'], price: '', amount: '', reason: '' });
   const [error, setError] = useState('');
   useEffect(() => { setEntries(loadJournal()); setChecks(loadChecks()); }, []);
   function add() {

@@ -1,4 +1,5 @@
 import type { ThesisReview } from "./thesis-review";
+import type { CurrentAffairs } from "./current-affairs";
 export type ScoreKey =
   | "businessQuality"
   | "financialPerformance"
@@ -113,6 +114,7 @@ export type ResearchRun = {
   scenarios: Scenario[];
   thesisKillers: string[];
   thesisReview?: ThesisReview;
+  currentAffairs?: CurrentAffairs;
   optionIdeas: OptionIdea[];
   benchmark: string;
   expectedReturn12m: { low: number; high: number };

@@ -3,14 +3,17 @@
 > The baton. Read this first and update it last. Protocol: `AGENTS.md`.
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
-**Current holder:** none. Five-case research PR #15 merged as `94360fc` (code `0dbe5d3`). Claude owner-auth PR #11 remains open and separate.
-**Last updated:** 2026-10-08 by Codex
-**Main baseline:** `94360fc` (five-case outlook atop connected-first holdings).
-**Latest feature commits:** `0dbe5d3` / merge `94360fc` (five-case outlook); `69a1965` / merge `2e9a1b9` (browser feedback).
-**Validation:** 206 tests, TypeScript, production build, PR CI and both preview/production checks pass. Synthetic actual-component browser verified five cases, weighted calculations, invalid weight rejection and restoration. Live saved cloud report verified new unavailable-model state, free explorer, hypothetical calculations and original rating restoration; no captured browser errors. Live Activity default/archive/completion controls also verified after previous browser timeouts. No paid research, brokerage refresh or trades. Fresh v0.14.0 provider output and source-level model evaluation remain open.
+**Current holder:** none. Claude PRs #30–#33 and Codex PRs #34–#35 merged; the outcome-consistency PR is the newest.
+**Last updated:** 2026-10-21 by Claude. Resumed; baseline 286 tests green. Made the holdings advice and stock action summary use the same research outcome as My stocks (verdict + confidence), so a stock with incomplete evidence no longer reads "Research first" while My stocks shows a verdict. Reports up to 90 days old still inform verdicts; new-position buy candidates still need a report 30 days old or newer. Owner setup still pending (see Next up). Unverified live: Google sign-in, migrations 006/007/008, cron runs, prompt v0.15.1 on a real report.
+**Prior update:** 2026-10-20 by Claude (UX rebuild, hurdle price, Watch).
+**Main baseline:** `fb024f2` (PR #34 decision-action layer).
+**Latest feature work:** PR #34 / merge `fb024f2` (decision-action layer); PR #33 / merge `d1cd677` (Watch).
+**Validation:** final PR #34 head `f5ae4ef` passed TypeScript, automated tests and production build; both Vercel PR preview checks passed. Post-merge Vercel deployments for both the Equity Research Lab and repo root passed on merge `fb024f2`. No paid research, live brokerage refresh or trades were performed for this change.
 **Notion plan:** https://app.notion.com/p/3eddf6e02bd78120a3fcf8f8cc768af1
 
 ## State
+
+**October 20 decision-action layer:** The portal now has one deterministic action vocabulary downstream of the existing research score: buy/add candidate, hold, hold/do-not-add, trim candidate, sell/exit review, research first, wait/watch and fund-exposure review. A ranked queue is shown on Portfolio and after a connected-account refresh; each stock report ends with a portfolio-aware final next step. Connected average cost is retained only when every combined share has valid reported basis, and tax-loss language is blocked from pretending average cost is actual lot data. See `docs/DECISION_ACTION_LAYER_2026-10-20.md`. P0 next: actual tax lots/wash-sale graph + account tax location, fund look-through/overlap, and one persisted owner portfolio-policy profile. Trading remains out of scope until recommendation quality is prospectively validated.
 
 **October 8 five-case outlook:** Reviewed five recent Investing stock chats as design references, not verified company facts. Reports put the existing unified decision first, then severe bear through severe bull representative outcomes, explicit hypothetical earnings/sales assumptions, source links/dates, weights, deterministic weighted returns and gain/loss weights. A free local explorer changes hypothetical inputs without changing the saved report or rating. Model generation uses the existing synthesis with a 9,000-output-token cap; no additional provider call. Unsupported sector models show exact gaps. Intrinsic values remain separate from one-year prices. Engine/skill v0.14.0. See `docs/FIVE_CASE_RESEARCH_2026-10-08.md`. Existing fresh-source evaluation task in Notion now includes the model assumptions. Binary-event and pre-revenue sector models, probability calibration and live source validation remain open.
 
@@ -55,6 +58,7 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Next up (in order)
 
+00. **Venkat (owner setup, none of it done yet):** Google OAuth client + `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`, `OWNER_EMAILS` (docs/GOOGLE_SIGNIN_SETUP.md); run Supabase migrations 006, 007, 008; set `CRON_SECRET` (docs/WATCH_2026-10-20.md); then refresh accounts and press Research on unresearched holdings. `OWNER_ACCESS_KEY` is only a fallback while Google sign-in is unset. Notion Inbox has one card per step.
 - Owner: complete the existing owner-key / security PR #11 setup and first brokerage refresh/reconciliation task. Portfolio home is delivered; no new navigation approval is needed. Next agent: verify imported mutual-fund classification, then improve portfolio-aware candidate additions and destination allocations without adding more menu destinations.
 
 0. Any agent: evaluate one fresh v0.14.0 report against actual source observations, dates, proposed thresholds, event dates and five-case operating/dilution/valuation assumptions. Prefer an existing report; otherwise one explicit capped request. Notion action: https://app.notion.com/p/3efdf6e02bd781399bd9d6c13b0df83e. Skill validation script lacked PyYAML; frontmatter/reference paths inspected manually.
@@ -66,13 +70,33 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 - Venkat reports that separate SnapTrade Personal credentials are configured in Vercel. The existing ChatGPT SnapTrade connection does not supply credentials to this website. Do not share any key through chat or Notion. First live refresh remains unverified.
 
-- ~~Auth~~ Decided: Vercel Deployment Protection, All Deployments. ~~Daily cap~~ Set to 5 by Venkat (2026-09-30).
+- ~~Auth~~ Decided: Vercel Deployment Protection, All Deployments, plus (2026-10-04, pending merge) owner sign-in on `/accounts` and `/api/snaptrade`, because the Origin check alone is forgeable outside a browser. ~~Daily cap~~ Set to 5 by Venkat (2026-09-30).
 - Are the 10% single-stock / 30% sector defaults right for you? (Editable per session on /holdings.)
 - Is a 15% margin of safety the right "buy zone" threshold?
 - Generic-tool direction: see `docs/PRODUCT_STRATEGY.md`. The narrow candidate is an educational concentration planner for stock-comp employees.
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-25 Claude: merged current main (93720a5) into `claude/supabase-rls-001-init` so PR #16 is mergeable; only HANDOFF.md conflicted, all newer log entries kept. tsc, 344 tests and build pass. Migration 005 still NOT applied to the live DB; awaiting Venkat's merge and migration approval.
+
+- 2026-10-24 Claude: root cause of the failed morning reports = expired OpenAI API key (HTTP 401 expired_secret_key in the report notes). Added providerFailure() and guardedResearch(): a run that never reached the AI because of an expired key or no credit returns its budget slot, saves nothing and shows a clear fix; other unrated runs are kept only for the interactive flow. Owner action: create a new OpenAI key, set OPENAI_API_KEY in Vercel, redeploy.
+
+- 2026-10-24 Claude: first real Prepare-now run produced five reports in 0-4 s with no rating (AI steps failed fast; cause pending the report's provider note). Morning job now marks unrated runs as failed with the reason, stops the new-stock search when research is failing, a newer unrated run no longer hides an older rated report on My stocks, NBIS has a sector. Cron itself verified reaching the app (Saturday skip).
+
+- 2026-10-24 Claude: morning job split into plan / research-one / finalize; added the signed-in **Prepare my brief now** button (`/api/morning`) after Venkat's cron Run showed no log. Cron-not-firing diagnosis steps in docs/MORNING_PREP_2026-10-23.md.
+
+- 2026-10-23 Claude: morning preparation job (Vercel Cron 12:00 UTC): fresh reports on the 3 most concentrated stocks plus 2 new names across industries, a percent-only brief with deconcentration math at the top of My stocks, verdict-change alerts. Migration 009. Off until MORNING_RESEARCH_ENABLED=true. Digest cron folded into the Sunday morning run (two crons total). docs/MORNING_PREP_2026-10-23.md.
+
+- 2026-10-22 Claude: from the Instagram-learnings digest, added report quality checks (source coverage, date consistency, cost/time) and seven fixed evaluation fixtures run in CI, plus a free historical range simulation per report. docs/REPORT_QUALITY_AND_RANGE_2026-10-22.md. Day-trader skill pack deliberately not installed.
+
+- 2026-10-21 Claude: resumed. Unified holdings advice and stock action labels on `researchOutcome` (lib/outcome.ts); outcome now tolerates archived reports missing optional text fields. 292 tests.
+
+- 2026-10-20 Claude: Watch features (triggers with status and goalpost log, calendar, daily no-LLM monitor via Vercel Cron, weekly digest, capped refresh of stocks whose dated test passed). Migration 008. Needs CRON_SECRET.
+
+- 2026-10-16 Claude: UX rebuild. Google OIDC sign-in with email allowlist (env: GOOGLE_CLIENT_ID/SECRET, AUTH_SECRET, OWNER_EMAILS; unset = old behavior), archive owned by account + legacy workspace claim (migration 006), followed stocks on the account (migration 007), research outcome (verdict + confidence, never 'no answer'), My stocks home with batch research of unresearched holdings (confirm + budget cap), per-stock history, automatic research calls journal. Owner-key flow kept only as fallback when Google sign-in is not configured.
+
+- 2026-10-16 Claude: built P0 (current-affairs evidence cards with citation/date validation, score breakdown, responsive decision header), engine v0.15.0, no extra paid call. PR #28 merged as `1290bd1`. Holder released.
 
 ### 2026-10-09 — Claude: Supabase hardening (branch `claude/supabase-rls-001-init`, PR open)
 - Migration `005_lock_legacy_001_tables.sql` enables RLS (no policies) and revokes anon/authenticated on `research_runs`, `claims`, `retrospective_results` (unused by app code; not dropped, no data loss). Guard test `tests/migrations-rls.test.ts` fails if a new public table lacks RLS. 207 tests, tsc and build pass.
@@ -96,6 +120,13 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - Selected connected/saved holdings autoload into trim comparisons; changing symbols loads values immediately. Latest saved report links avoid a needless fresh-research entry. No paid calls added.
 - 180 tests, TypeScript and build pass. Local synthetic production browser verification and phone layout pass. Cloud archive unavailable locally; visible browser fallback verified. Live data, tax-lot/fund overlap and ROI limits remain open.
 - Notion project direction, Decision Log and Handoff log updated. Code `d0beced`, PR #12 merge `33171c8`; CI, both previews and both production deployments pass. Live home/saved snapshot, selected-holding autoload, Activity journal/cloud archive and clean browser log verified. Holder released.
+
+### 2026-10-04 — Claude: owner sign-in for connected accounts (branch `claude/owner-auth-snaptrade`)
+- Security review finding: `/api/snaptrade` returned all Fidelity/Robinhood positions with cost basis, guarded only by a same-origin check (forgeable with curl) and Vercel Deployment Protection.
+- Added `lib/server/owner-auth.ts`: `OWNER_ACCESS_KEY` (32+ chars, server-only) is exchanged at `/api/owner-session` for a 12-hour HMAC-signed, httpOnly, SameSite=strict cookie. Constant-time comparisons; unset or short key fails closed. `/api/snaptrade` returns 401 without a valid session; `/accounts` shows a sign-in form instead of the account UI. Sign-out via DELETE.
+- Fixed the stale "no web route imports this module" comment in `snaptrade-personal.ts`. Added `vitest.config.ts` (`@/` alias) so route handlers are tested directly.
+- Validation: tsc, 190 tests (10 new), production build pass. Local production-build check: forged-origin/no-session 401, wrong key 401, cross-site sign-in 403, owner sign-in 200, session reaches the enablement check (503 with portal disabled), sign-out returns to 401. No live SnapTrade call was made.
+- Next: Venkat sets `OWNER_ACCESS_KEY` in Vercel and merges; then the existing "Verify linked portfolio refresh" item.
 
 ### 2026-10-04 — Codex: dated thesis reviews and release fix (PR #9 / #10, merged)
 - User authorized autonomous iteration while AFK. Adapted the useful supplied-skill discipline into the existing research skill, without its numerical gates or hindsight-fit probability claims.

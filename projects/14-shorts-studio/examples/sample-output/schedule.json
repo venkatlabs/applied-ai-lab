@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ep01-baby-ceo",
+    "local": "2026-10-15T17:30:00-04:00",
+    "publishAt": "2026-10-15T21:30:00Z"
+  },
+  {
+    "id": "ep02-quarterly-review",
+    "local": "2026-10-16T17:30:00-04:00",
+    "publishAt": "2026-10-16T21:30:00Z"
+  },
+  {
+    "id": "ep03-this-could-have-been-an-email",
+    "local": "2026-10-17T17:30:00-04:00",
+    "publishAt": "2026-10-17T21:30:00Z"
+  },
+  {
+    "id": "ep04-interview",
+    "local": "2026-10-18T17:30:00-04:00",
+    "publishAt": "2026-10-18T21:30:00Z"
+  },
+  {
+    "id": "ep05-raise",
+    "local": "2026-10-19T17:30:00-04:00",
+    "publishAt": "2026-10-19T21:30:00Z"
+  },
+  {
+    "id": "ep06-friday-afternoon",
+    "local": "2026-10-20T17:30:00-04:00",
+    "publishAt": "2026-10-20T21:30:00Z"
+  }
+]

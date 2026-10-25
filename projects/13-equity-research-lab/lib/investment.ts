@@ -25,8 +25,8 @@ export const investmentCaseJsonSchema = {
   },
 };
 // Fixed policy weights. These are transparent research judgments, not calibrated return probabilities.
-const weights = { growth: .2, cash: .2, valuation: .25, competition: .15, execution: .1, market: .1 };
-const points = { "Very weak": 10, Weak: 30, Mixed: 50, Strong: 70, "Very strong": 90, Unknown: 50 };
+export const factorWeights = { growth: .2, cash: .2, valuation: .25, competition: .15, execution: .1, market: .1 };
+export const factorPoints = { "Very weak": 10, Weak: 30, Mixed: 50, Strong: 70, "Very strong": 90, Unknown: 50 };
 export function validateInvestmentCase(value: InvestmentCase, urls: string[], asOf: string): InvestmentCase {
   const result = investmentCaseSchema.parse(value);
   const allowed = new Set(urls);
@@ -52,7 +52,7 @@ export function singleInvestmentDecision(run: ResearchRun) {
   const missing = thesis ? factorKeys.filter(k => !known.includes(k)).map(k => factorLabels[k]) : ["a fresh report using the unified investment method"];
   const available = run.dataMode !== "demo" && !!thesis && known.length >= 4 && known.includes("growth") && known.includes("cash") && run.asOfPrice > 0 && Number.isFinite(priceAge) && priceAge >= 0 && priceAge <= 7;
   if (!Number.isFinite(priceAge) || priceAge < 0 || priceAge > 7 || !(run.asOfPrice > 0)) missing.push("a recent verified share price");
-  let score: number | null = available ? Math.round(factorKeys.reduce((sum,k) => sum + weights[k] * points[thesis!.factors[k].rating], 0)) : null;
+  let score: number | null = available ? Math.round(factorKeys.reduce((sum,k) => sum + factorWeights[k] * factorPoints[thesis!.factors[k].rating], 0)) : null;
   // Unknown valuation blocks a buy. A sell still requires negative evidence in other factors.
   if (score !== null && !known.includes("valuation")) score = Math.min(59, score);
   const action = score === null ? thesis ? "Research incomplete" : "Older report · rerun" : score >= 70 ? "Buy candidate" : !known.includes("valuation") && score >= 40 ? "Valuation incomplete · wait before adding" : score >= 60 ? "Watch for a better entry" : score >= 40 ? "Hold / wait" : "Avoid / review selling";

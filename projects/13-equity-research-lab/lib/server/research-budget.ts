@@ -1,4 +1,4 @@
-import { reserveUsage, usageStore } from './usage-budget';
+import { reserveUsage, releaseUsage, usageStore } from './usage-budget';
 import { archiveContext } from "./archive";
 import { database } from "./supabase";
 import type { ResearchRun } from "../types";
@@ -61,10 +61,8 @@ export function reusable(run: ResearchRun | undefined, now = new Date()): run is
   return !!run && run.dataMode !== "demo" && run.analyzedAt >= utcDayStart(now) && (!!run.investmentCase || run.score > 0 || !!run.researchCompletion?.attempted);
 }
 
-/** Latest completed report for this ticker from today (UTC), owner-scoped. */
-export async function sameDayReport(ticker: string): Promise<ResearchRun | undefined> {
-  const ctx = await archiveContext();
-  if (!ctx) return undefined;
+/** Latest completed report for this ticker from today (UTC) for an explicit owner. */
+export async function sameDayReportFor(ctx: { owner: string; db: NonNullable<ReturnType<typeof database>> }, ticker: string): Promise<ResearchRun | undefined> {
   const { data, error } = await ctx.db.from("equity_snapshots").select("payload")
     .eq("owner_hash", ctx.owner).eq("ticker", ticker).is("deleted_at", null)
     .gte("analyzed_at", utcDayStart()).order("analyzed_at", { ascending: false }).limit(5);
@@ -72,9 +70,21 @@ export async function sameDayReport(ticker: string): Promise<ResearchRun | undef
   return (data ?? []).map(row => row.payload as ResearchRun).find(run => reusable(run));
 }
 
+/** Latest completed report for this ticker from today (UTC), owner-scoped. */
+export async function sameDayReport(ticker: string): Promise<ResearchRun | undefined> {
+  const ctx = await archiveContext();
+  return ctx ? sameDayReportFor(ctx, ticker) : undefined;
+}
+
 export async function claimResearchSlot() {
   if(!isLiveMode())return;
   const floor=await liveReportsToday();
   if(floor===null)throw new Error('Research paused: usage could not be verified.');
   await reserveUsage(usageStore(),'research',new Date().toISOString().slice(0,10),dailyCap(),floor);
+}
+
+/** Return the slot reserved by claimResearchSlot when the run provably spent nothing. */
+export async function releaseResearchSlot() {
+  if(!isLiveMode())return;
+  await releaseUsage(usageStore(),'research',new Date().toISOString().slice(0,10));
 }

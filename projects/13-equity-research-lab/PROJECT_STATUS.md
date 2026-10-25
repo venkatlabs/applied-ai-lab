@@ -1,3 +1,7 @@
+## October 20, 2026 — deterministic next-action layer
+
+PR #34 adds a portfolio-aware decision layer so an account refresh and a stock report end with an explicit next-step candidate: buy/add, hold, hold/do-not-add, trim, sell/exit review, research first, or fund-exposure review. It reuses the existing six-factor research verdict and position rules rather than introducing another score. Connected weighted average cost is preserved only when fully reported, with tax-lot/wash-sale limitations kept explicit. No trades are placed and no additional paid research call is introduced. Missing work required before a trading layer is documented in `docs/DECISION_ACTION_LAYER_2026-10-20.md`.
+
 ## October 8, 2026 — five-case research outlook
 Adapted the five recent stock-analysis chats into a decision-first one-year scenario view: five representative outcomes, explicit assumptions/sources, deterministic weighted returns and loss/gain weights, plus a free local explorer. Unified rating and valuation guardrails remain. No extra provider call. Unsupported sector models remain explicit. See `docs/FIVE_CASE_RESEARCH_2026-10-08.md` and HANDOFF for release checks.
 

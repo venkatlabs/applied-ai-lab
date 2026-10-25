@@ -8,10 +8,18 @@ import { ReportTools } from "./ReportTools";
 import type { ResearchRun } from "@/lib/types";
 
 import { ExecutiveSummary } from "./ExecutiveSummary";
+import { StockHistory } from "./StockHistory";
+import { StockTriggers } from "./StockTriggers";
+import { ReportQuality } from "./ReportQuality";
+import { HistoricalRange } from "./HistoricalRange";
+import { DecisionHeader } from "./DecisionHeader";
+import { ScoreBreakdown } from "./ScoreBreakdown";
+import { CurrentAffairsPanel } from "./CurrentAffairsPanel";
 import { InvestmentChoices } from "./InvestmentChoices";
 import { GroundingPanel } from "./GroundingPanel";
 import { SnapshotRecorder } from "./SnapshotRecorder";
 import { IntrinsicValuePanel } from "./IntrinsicValuePanel";
+import { StockNextAction } from "./StockNextAction";
 
 function utcLabel(iso?: string) {
   if (!iso) return null;
@@ -43,9 +51,16 @@ export function ResearchView({ run }: { run: ResearchRun }) {
     {run.dataMode !== "demo" && !hasScores && <div className="warning"><strong>Live-data mode, incomplete analysis.</strong> The app did not substitute demo scores when a provider or AI synthesis failed. Check Research notes below.</div>}
 
     {run.dataMode !== 'demo' && <section className="panel"><h2>Research completion</h2><p>{completionState(run).note}</p>{completionState(run).status === 'evidence blocked' && <ul>{completionState(run).gaps.map(gap=><li key={gap}>{gap}</li>)}</ul>}{completionState(run).followUp && <RunResearch ticker={run.ticker} complete reportId={run.id} />}</section>}
+    <DecisionHeader run={run} />
     <ExecutiveSummary run={run} />
+    <ScoreBreakdown run={run} />
+    <CurrentAffairsPanel run={run} />
+    <StockHistory ticker={run.ticker} currentId={run.id} />
+    <HistoricalRange run={run} />
+    <ReportQuality run={run} />
     <ScenarioDistribution key={run.id} run={run} />
     <ThesisReviewPanel run={run} />
+    {run.dataMode !== "demo" && <StockTriggers ticker={run.ticker} />}
     <PeerValuationPanel run={run} />
     <HoldingAdjustment ticker={run.ticker} />
     <ReportTools run={run} />
@@ -92,5 +107,6 @@ export function ResearchView({ run }: { run: ResearchRun }) {
     <section className="panel"><h2>Sources</h2>{run.citations.length ? <ol>{run.citations.map((c, i) => <li key={`${c.url}-${i}`}><a href={c.url} target="_blank" rel="noreferrer">{c.title}</a> <span className="muted">— {c.source}, tier {c.tier}, retrieved {new Date(c.retrievedAt).toISOString().slice(0, 10)}</span></li>)}</ol> : <p className="muted">No verified sources loaded.</p>}</section>
     {run.notes.length > 0 && <details className="panel"><summary>Technical research notes</summary><ul>{run.notes.map((x, i) => <li key={`${x}-${i}`}>{x}</li>)}</ul></details>}
     </details>
+    <StockNextAction run={run} />
   </>;
 }

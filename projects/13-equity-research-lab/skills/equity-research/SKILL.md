@@ -5,7 +5,7 @@ description: Research listed companies and revisit personal portfolio buy, hold,
 
 # Equity Research Skill
 
-Version: `equity-research-v0.14.0` (matches `lib/research-engine.ts` `skillVersion`)
+Version: `equity-research-v0.15.1` (matches `lib/research-engine.ts` `skillVersion`)
 
 ## Purpose
 Help the owner decide what to do with a stock (buy, hold, trim or wait) without mixing up business quality, valuation, market expectations and timing. Every conclusion is saved as a timestamped snapshot, so later reports and the decision journal can grade it.
@@ -58,3 +58,5 @@ Read [thesis review guidance](references/thesis-review.md) for evidence checks, 
 
 ## Five-case outlook
 Put the unified rating and Buy/Hold/Wait reasoning first, followed by severe bear, bear, base, bull and severe bull outcomes for the next twelve months. Use a sourced earnings or enterprise-sales model only when appropriate; separate starting facts from forecast assumptions and explain growth, multiples, future diluted shares and financing. Code computes representative prices, returns and weighted outcomes. All weights are subjective assumptions, not validated probabilities or clinical odds. Never confuse analyst-target upside with probability of profit, or intrinsic DCF values with one-year prices. Missing model inputs remain explicit. The local scenario explorer lets the owner test hypothetical prices/weights without paid calls or changing the frozen report or investment decision.
+
+Read [current affairs guidance](references/current-affairs.md) for dated event evidence cards. The application keeps only events tied to this report's own sources with valid publication dates, takes provenance from the citation catalog, and labels direct company evidence, sector spillover and model interpretation separately. Events never change the score or verdict.
