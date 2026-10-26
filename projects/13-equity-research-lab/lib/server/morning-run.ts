@@ -3,8 +3,9 @@ import { readPersonalPortfolio, createPersonalReader } from "./snaptrade-persona
 import { toConnectedSnapshot } from "./snaptrade-snapshot";
 import { connectedHoldings } from "../connected-portfolio";
 import { runResearch } from "../research-engine";
+import { providers } from "../providers";
 import { saveSnapshotFor } from "./archive";
-import { claimResearchSlot, releaseResearchSlot, researchBudget, sameDayReportFor } from "./research-budget";
+import { claimLightSlot, claimResearchSlot, releaseResearchSlot, researchBudget, sameDayReportFor } from "./research-budget";
 import { guardedResearch } from "./guarded-research";
 import { providerFailure } from "../provider-failure";
 import { runWeeklyDigest } from "./monitor-run";
@@ -13,7 +14,7 @@ import type { ResearchRun } from "../types";
 import { isRated } from "../outcome";
 import {
   COMFORT, LIMIT, AI_INFRASTRUCTURE, clusterWeights, dayIndexOf, describeItem, pickDiscovery, sellFraction, sectorFor, summariseBrief, topConcentrated,
-  researchOutcome, type Brief, type BriefItem,
+  researchOutcome, needsDeepRefresh, describeScreen, exitWatchCandidates, type Brief, type BriefItem,
 } from "../morning";
 
 type Db = NonNullable<ReturnType<typeof database>>;
@@ -22,6 +23,10 @@ export type MorningDeps = {
   db: Db; now: Date; env: Env; clock?: () => number;
   loadHoldings: () => Promise<{ holdings: Holdings | null; notes: string[] }>;
   research: (ticker: string) => Promise<{ run: ResearchRun; reused: boolean }>;
+  /** Free quick screen (no AI). */
+  screen: (ticker: string) => Promise<{ run: ResearchRun; reused: boolean }>;
+  /** Current price for the daily refresh gate; null when unavailable. */
+  quote: (ticker: string) => Promise<number | null>;
   remainingBudget: () => Promise<number>;
 };
 
@@ -62,12 +67,26 @@ export async function planMorning(owner: string, deps: MorningDeps): Promise<Bri
   const discovery = pickDiscovery({ dayIndex: dayIndexOf(day), exclude, count: discoveryWanted });
   const clusters = holdings ? clusterWeights(holdings) : [];
 
-  const waiting = (symbol: string, role: BriefItem["role"], sector: string, weight: number | null): BriefItem => {
+  const gate = { maxAgeDays: intEnv(env.MORNING_DEEP_MAX_AGE_DAYS, 7, 1, 60), movePct: intEnv(env.MORNING_DEEP_MOVE_PCT, 7, 1, 50), always: env.MORNING_DEEP_ALWAYS === "true" };
+  const exitCount = intEnv(env.MORNING_EXIT_SCAN, 2, 0, 5);
+  const waiting = (symbol: string, role: BriefItem["role"], sector: string, weight: number | null, tier: BriefItem["tier"], tierReason: string): BriefItem => {
     const before = previousReports.find(r => r.ticker === symbol && isRated(r));
-    return { symbol, role, status: "pending", reportId: null, verdict: null, confidence: null, score: null, previousVerdict: before ? researchOutcome(before, new Date(before.analyzedAt)).verdict : null, changed: false,
+    return { symbol, role, tier, tierReason, screenLabel: null, status: "pending", reportId: null, verdict: null, confidence: null, score: null, previousVerdict: before ? researchOutcome(before, new Date(before.analyzedAt)).verdict : null, changed: false,
       weightPct: weight === null ? null : Number((weight * 100).toFixed(1)), sector, lines: [], costUSD: null, seconds: null };
   };
-  const items = [...concentrated.map(c => waiting(c.symbol, "concentrated", sectorFor(c.symbol), holdings ? c.weight : null)), ...discovery.map(d => waiting(d.symbol, "discovery", d.sector, null))];
+  const deepItems: BriefItem[] = [];
+  for (const c of concentrated) {
+    const report = previousReports.find(r => r.ticker === c.symbol && isRated(r));
+    const price = await deps.quote(c.symbol).catch(() => null);
+    const g = needsDeepRefresh({ report, price, now, ...gate });
+    deepItems.push(waiting(c.symbol, "concentrated", sectorFor(c.symbol), holdings ? c.weight : null, g.deep ? "deep" : "reuse", g.reason));
+  }
+  const watch = holdings ? exitWatchCandidates(holdings, new Set(concentrated.map(c => c.symbol)), dayIndexOf(day), exitCount) : [];
+  const items = [
+    ...deepItems,
+    ...watch.map(sym => waiting(sym, "exit-watch", sectorFor(sym), null, "light", "Free screen of another holding, looking for an exit or trim candidate.")),
+    ...discovery.map(d => waiting(d.symbol, "discovery", d.sector, null, "light", "Free screen of a new idea from a different industry.")),
+  ];
 
   const all = holdings ? holdings.positions.filter(p => p.kind === "stock" && p.shares > 0).map(p => ({ symbol: p.symbol, weight: (p.shares * p.price) / holdings.totalValue })).sort((a, b) => b.weight - a.weight) : [];
   const sum = (n: number) => all.slice(0, n).reduce((a, b) => a + b.weight, 0);
@@ -87,31 +106,52 @@ export async function planMorning(owner: string, deps: MorningDeps): Promise<Bri
 
 /** Recompute status, summary and cost from the items. */
 export function finalizeBrief(brief: Brief): Brief {
-  const spent = brief.items.filter(i => i.status === "researched");
+  const spent = brief.items.filter(i => i.status === "researched" && i.tier === "deep");
   const costKnown = spent.length > 0 && spent.every(i => i.costUSD !== null);
-  const { status, summary } = summariseBrief(brief.items, brief.concentration?.flags.slice(0, 1) ?? []);
+  const deep = brief.items.filter(i => i.tier === "deep" && i.status === "researched").length, screens = brief.items.filter(i => i.tier === "light" && (i.status === "researched" || i.status === "reused")).length;
+  const { status, summary } = summariseBrief(brief.items, [`${deep} paid deep report${deep === 1 ? "" : "s"}, ${screens} free screen${screens === 1 ? "" : "s"}`, ...(brief.concentration?.flags.slice(0, 1) ?? [])]);
   return { ...brief, status, summary, cost: { estimatedUSD: costKnown ? Number(spent.reduce((a, i) => a + (i.costUSD ?? 0), 0).toFixed(2)) : null, reports: spent.length } };
 }
 
-/** Step 2: research one waiting stock (reusing today's report if there is one) and return the updated item. */
+async function latestRated(db: Db, owner: string, symbol: string): Promise<ResearchRun | undefined> {
+  const { data } = await db.from("equity_snapshots").select("payload").eq("owner_hash", owner).eq("ticker", symbol).is("deleted_at", null).order("analyzed_at", { ascending: false }).limit(10);
+  return (data ?? []).map(r => r.payload as ResearchRun).find(r => r.dataMode !== "demo" && isRated(r));
+}
+
+/** Step 2: do the planned work for one stock. Deep = paid AI report, reuse = latest report stands, light = free quick screen. */
 export async function researchItem(owner: string, deps: MorningDeps, brief: Brief, item: BriefItem, budget: Budget): Promise<BriefItem> {
   const { db, now } = deps;
   const clusterPct = brief.concentration?.clusters[0] ? brief.concentration.clusters[0].weightPct / 100 : null;
+  const weight = item.weightPct === null ? null : item.weightPct / 100;
+  const inAi = (AI_INFRASTRUCTURE as readonly string[]).includes(item.symbol);
+  const rated = (run: ResearchRun, status: BriefItem["status"], extra: string[] = []): BriefItem => {
+    const o = researchOutcome(run, now);
+    return { ...item, status, reportId: run.id, verdict: o.verdict, confidence: o.confidence, score: o.score, changed: status === "researched" && !!item.previousVerdict && item.previousVerdict !== o.verdict,
+      lines: [...describeItem(o, weight, item.previousVerdict, item.sector, clusterPct, inAi), ...extra],
+      costUSD: run.cost?.estimatedUSD ?? null, seconds: typeof run.cost?.durationMs === "number" ? Math.round(run.cost.durationMs / 1000) : null, note: undefined };
+  };
   try {
-    const today = await sameDayReportFor({ owner, db }, item.symbol);
-    if (!today && budget.left <= 0) return { ...item, status: "skipped", note: "Skipped: no research budget left today." };
+    if (item.tier === "reuse") {
+      const run = await latestRated(db, owner, item.symbol);
+      if (!run) return { ...item, tier: "deep", status: "failed", note: "No earlier deep report was found to reuse." };
+      return rated(run, "reused", [item.tierReason]);
+    }
+    if (item.tier === "light") {
+      const todayDeep = await sameDayReportFor({ owner, db }, item.symbol);
+      if (todayDeep && isRated(todayDeep)) return rated(todayDeep, "reused", ["A deep report from today is available."]);
+      const { run } = todayDeep?.screen ? { run: todayDeep } : await deps.screen(item.symbol);
+      if (!run.screen) return { ...item, status: "failed", note: (run.notes ?? [])[0] ?? "The quick screen could not be completed." };
+      return { ...item, status: todayDeep?.screen ? "reused" : "researched", reportId: run.id, screenLabel: run.screen.label, lines: describeScreen(run.screen, item.role === "exit-watch"), costUSD: null, seconds: null, note: undefined };
+    }
+    const today = await sameDayReportFor({ owner, db }, item.symbol, true);
+    if (!today && budget.left <= 0) return { ...item, status: "skipped", note: "Skipped: no paid research budget left today." };
     if (!today) budget.left--;
     const { run, reused } = today ? { run: today, reused: true } : await deps.research(item.symbol);
     if (!isRated(run)) {
       // The run finished without an analysis (a provider failed). Do not present it as a result or a verdict change.
-      const why = providerFailure(run)?.message ?? "";
-      return { ...item, status: "failed", reportId: run.id, note: `The analysis did not finish. ${why || "No reason was recorded."}` };
+      return { ...item, status: "failed", reportId: run.id, note: `The analysis did not finish. ${providerFailure(run)?.message ?? ""}`.trim() };
     }
-    const o = researchOutcome(run, now), weight = item.weightPct === null ? null : item.weightPct / 100;
-    return { ...item, status: reused ? "reused" : "researched", reportId: run.id, verdict: o.verdict, confidence: o.confidence, score: o.score,
-      changed: !!item.previousVerdict && item.previousVerdict !== o.verdict,
-      lines: describeItem(o, weight, item.previousVerdict, item.sector, clusterPct, (AI_INFRASTRUCTURE as readonly string[]).includes(item.symbol)),
-      costUSD: run.cost?.estimatedUSD ?? null, seconds: typeof run.cost?.durationMs === "number" ? Math.round(run.cost.durationMs / 1000) : null, note: undefined };
+    return rated(run, reused ? "reused" : "researched");
   } catch (e) { return { ...item, status: "failed", note: e instanceof Error ? e.message.slice(0, 200) : "Research failed." }; }
 }
 
@@ -126,16 +166,16 @@ export async function alertChanges(owner: string, deps: Pick<MorningDeps, "db">,
 /** All steps in one go, for the scheduled job. */
 export async function runMorningForOwner(owner: string, deps: MorningDeps): Promise<Brief> {
   const { env } = deps, clock = deps.clock ?? Date.now, started = clock();
-  const maxTotal = intEnv(env.MORNING_RESEARCH_MAX, 5, 1, 10);
+  const maxTotal = intEnv(env.MORNING_RESEARCH_MAX, 3, 1, 10);
   const planned = await planMorning(owner, deps);
   const budget: Budget = { left: Math.min(maxTotal, await deps.remainingBudget()) };
-  const concentrated = planned.items.filter(i => i.role === "concentrated"), discovery = planned.items.filter(i => i.role === "discovery");
-  const items: BriefItem[] = await inBatches(concentrated, 3, i => researchItem(owner, deps, planned, i, budget));
+  const top = planned.items.filter(i => i.role === "concentrated"), light = planned.items.filter(i => i.role !== "concentrated");
+  const items: BriefItem[] = await inBatches(top, 3, i => researchItem(owner, deps, planned, i, budget));
   const notes = [...planned.notes];
-  if (discovery.length) {
-    if (concentrated.length && items.every(i => i.status === "failed")) { notes.push("New-stock search was skipped: research is failing, so no more of your budget was used."); items.push(...discovery.map(d => ({ ...d, status: "skipped" as const, note: "Skipped to protect your research budget." }))); }
-    else if (clock() - started > FIRST_PHASE_MS) { notes.push("New-stock search was skipped: the concentrated stocks took too long."); items.push(...discovery.map(d => ({ ...d, status: "skipped" as const, note: "Skipped: time ran short." }))); }
-    else items.push(...await inBatches(discovery, 2, d => researchItem(owner, deps, planned, d, budget)));
+  // Quick screens use no AI, so the only reason to skip them is time.
+  if (light.length) {
+    if (clock() - started > FIRST_PHASE_MS) { notes.push("Quick screens were skipped: the top holdings took too long."); items.push(...light.map(d => ({ ...d, status: "skipped" as const, note: "Skipped: time ran short." }))); }
+    else items.push(...await inBatches(light, 3, d => researchItem(owner, deps, planned, d, budget)));
   }
   const brief = finalizeBrief({ ...planned, items, notes });
   await saveBrief(owner, deps, brief);
@@ -168,6 +208,8 @@ export function morningDepsFor(owner: string, db: Db, now: Date, env: Env): Morn
     loadHoldings: () => realHoldings(env, now),
     remainingBudget: async () => { const b = await researchBudget(); return b.reason ? 0 : b.remaining; },
     research: async ticker => ({ run: await guardedResearch({ claim: claimResearchSlot, run: () => runResearch(ticker), save: r => saveSnapshotFor({ owner, db }, r), release: releaseResearchSlot, keepUnrated: false }), reused: false }),
+    screen: async ticker => ({ run: await guardedResearch({ claim: claimLightSlot, run: () => runResearch(ticker, undefined, "light"), save: r => saveSnapshotFor({ owner, db }, r), release: async () => {}, keepUnrated: false, tier: "light" }), reused: false }),
+    quote: async ticker => { try { const m = await providers.market.getMarket(ticker); return m.price && m.price > 0 ? m.price : null; } catch { return null; } },
   };
 }
 

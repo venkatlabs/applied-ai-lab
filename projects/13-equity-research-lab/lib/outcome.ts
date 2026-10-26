@@ -1,6 +1,7 @@
 import type { ResearchRun } from "./types";
 import { factorKeys, factorLabels, factorPoints, factorWeights } from "./investment";
 import { distributionSummary } from "./scenario-math";
+import type { ScreenResult } from "./screen";
 
 /**
  * One clear research outcome per report: a verdict, a confidence and the reasons, computed in code from the
@@ -34,6 +35,8 @@ export type Outcome = {
   weightedReturnPct: number | null;
   bearPrice: number | null;
   bullPrice: number | null;
+  /** Free quick screen (no AI) when that is all that has been run. Never a rating. */
+  screen: ScreenResult | null;
 };
 
 const shorten = (s: string | undefined, n = 180) => { const t = s ?? ""; return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t; };
@@ -41,7 +44,7 @@ const empty = (headline: string, missing: string[]): Outcome => ({
   verdict: "Not researched", lean: null, score: null, confidence: null, confidencePoints: null, method: "none", headline,
   ownedAction: "Research this stock before deciding.", notOwnedAction: "Research this stock before deciding.",
   reasonsFor: [], reasonsAgainst: [], changeMind: "", missing, analyzedAt: null, ageDays: null, needsRefresh: true,
-  weightedReturnPct: null, bearPrice: null, bullPrice: null,
+  weightedReturnPct: null, bearPrice: null, bullPrice: null, screen: null,
 });
 
 export function verdictForScore(score: number): { verdict: Verdict; lean: "positive" | "neutral" | "negative" } {
@@ -79,6 +82,9 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
     bullPrice: summary ? run.scenarioDistribution!.cases[4].price : null,
   };
 
+  if (run.tier === "light" && run.screen && !run.investmentCase) {
+    return { ...empty(`Quick screen: ${run.screen.label}. No AI was used, so there is no verdict. ${run.screen.label === "Worth a deep look" ? "Run deep research to get one." : "A deep report is optional."}`, ["A deep research report"]), analyzedAt: run.analyzedAt, ageDays, needsRefresh: ageDays === null || ageDays > 7, screen: run.screen, ...range };
+  }
   const thesis = run.investmentCase;
   if (!thesis) {
     // Older reports: map their own saved score with low confidence instead of hiding them.
@@ -94,7 +100,7 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
       ownedAction: actions[verdict].owned, notOwnedAction: actions[verdict].notOwned,
       reasonsFor: (run.highlights ?? []).slice(0, 2).map(h => shorten(h)), reasonsAgainst: (run.risks ?? []).slice(0, 2).map(r => shorten(r)),
       changeMind: run.thesisKillers?.[0] ? shorten(run.thesisKillers[0]) : "", missing: ["A report using the current six-factor method"],
-      analyzedAt: run.analyzedAt, ageDays, needsRefresh, ...range,
+      analyzedAt: run.analyzedAt, ageDays, needsRefresh, ...range, screen: null,
     };
   }
 
@@ -129,7 +135,7 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
   return {
     verdict: final, lean: final === "Hold" ? lean : verdict === "Buy / Add" ? "positive" : "negative", score, confidence, confidencePoints, method: "six-factor", headline,
     ownedAction: actions[final].owned, notOwnedAction: actions[final].notOwned, reasonsFor, reasonsAgainst,
-    changeMind: shorten(thesis.changeMind, 260), missing, analyzedAt: run.analyzedAt, ageDays, needsRefresh, ...range,
+    changeMind: shorten(thesis.changeMind, 260), missing, analyzedAt: run.analyzedAt, ageDays, needsRefresh, ...range, screen: null,
   };
 }
 
