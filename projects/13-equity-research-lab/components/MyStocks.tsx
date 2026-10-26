@@ -115,12 +115,13 @@ function StockCard({ row, onRemove, flag }: { row: StockRow; onRemove: () => voi
     <div className="stock-verdict"><strong className={`verdict-badge ${verdictClass(o.verdict)}`}>{o.verdict}</strong>
       {o.confidence && <span className="muted">{o.confidence} confidence · score {o.score}</span>}</div>
     <div className="stock-why"><p>{o.verdict === 'Not researched' ? o.headline : row.owned ? o.ownedAction : o.notOwnedAction}</p>
+      {o.screen && <p className="muted">Quick screen (no AI): <strong>{o.screen.label}</strong>. {o.screen.signals.filter(x => x.score !== 0).map(x => x.label.toLowerCase() + (x.score > 0 ? ' +' : ' −')).join(', ')}</p>}
       <p className="muted">{o.analyzedAt ? `Researched ${ago(o.ageDays)}${o.needsRefresh ? ' · refresh recommended' : ''}` : 'Never researched'}
         {row.sinceCall && ` · since the call: ${row.sinceCall.movePct > 0 ? '+' : ''}${row.sinceCall.movePct}% in ${row.sinceCall.days} days ${row.sinceCall.right ? '✓' : '✗'}`}</p>
       {row.hurdle && <p className="muted">{row.hurdle.clears ? `Clears your ${Math.round(row.hurdle.hurdle * 100)}% hurdle at $${row.hurdle.referencePrice.toFixed(2)}` : `Needs a price at or below $${row.hurdle.hurdlePrice.toFixed(2)} to clear your ${Math.round(row.hurdle.hurdle * 100)}% hurdle (${row.hurdle.gapPct}% below $${row.hurdle.referencePrice.toFixed(2)})`} · model-weighted expected return {row.hurdle.expectedReturnPct}%</p>}
       {o.confidence === 'Low' && o.missing.length > 0 && <p className="muted">Missing: {o.missing.slice(0, 3).join('; ')}.</p>}</div>
     <div className="button-row stock-actions">
-      <Link className={row.action === 'Open' ? 'action secondary' : 'action'} href={row.action === 'Open' ? href : `/company/${encodeURIComponent(row.symbol)}`}>{row.action === 'Open' ? 'Open report' : row.action === 'Refresh' ? 'Refresh research' : 'Research'}</Link>
+      <Link className={row.action === 'Open' ? 'action secondary' : 'action'} href={row.action === 'Open' ? href : `/company/${encodeURIComponent(row.symbol)}`}>{row.action === 'Open' ? 'Open report' : row.action === 'Refresh' ? 'Refresh research' : o.screen ? 'Deep research' : 'Research'}</Link>
       {row.following && !row.owned && <button className="action secondary" onClick={onRemove} aria-label={`Stop following ${row.symbol}`}>Unfollow</button>}
     </div>
   </article>;

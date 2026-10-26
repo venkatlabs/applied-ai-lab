@@ -11,7 +11,7 @@ const schema = z.discriminatedUnion("step", [
   z.object({ step: z.literal("plan") }),
   z.object({ step: z.literal("research"), symbol: z.string().trim().toUpperCase().regex(/^[A-Z][A-Z.\-]{0,9}$/) }),
 ]);
-const maxTotal = () => { const n = Number(process.env.MORNING_RESEARCH_MAX); return Number.isInteger(n) && n >= 1 && n <= 10 ? n : 5; };
+const maxTotal = () => { const n = Number(process.env.MORNING_RESEARCH_MAX); return Number.isInteger(n) && n >= 1 && n <= 10 ? n : 3; };
 
 /**
  * Prepare the morning brief on demand, one step at a time so each paid research call stays inside the function time limit and

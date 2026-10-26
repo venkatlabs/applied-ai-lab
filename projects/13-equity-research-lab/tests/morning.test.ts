@@ -97,6 +97,9 @@ function fakeDb() {
 afterEach(() => { calls.length = 0; tables = {}; vi.resetModules(); vi.doUnmock("../lib/server/supabase"); });
 
 const owner = "o".repeat(64);
+const lightRun = (ticker: string, label = "Mixed") => ({ id: `light-${ticker}`, ticker, companyName: ticker, analyzedAt: "2026-10-23T12:00:00Z", asOfPrice: 50, dataMode: "live", tier: "light", score: 0, notes: [], highlights: [], risks: [], thesisKillers: [],
+  screen: { label, total: 1, signals: [{ key: "cash", label: "Profit and cash", score: 1, detail: "ok" }, { key: "peers", label: "Multiple versus peers", score: -1, detail: "rich" }], missing: [], note: "" } }) as unknown as ResearchRun;
+const extras = (screenLabel = "Mixed") => ({ screen: async (t: string) => ({ run: lightRun(t, screenLabel), reused: false }), quote: async () => null as number | null });
 const now = new Date("2026-10-23T12:00:00Z"); // a Friday
 const holdings = h([["AMZN", 6, 100], ["NBIS", 1.5, 100], ["NVDA", 0.9, 100], ["MSFT", 0.2, 100]], 1000);
 const mkRun = (ticker: string, rating: string, over: Record<string, unknown> = {}) => ({ ...run(rating), id: `id-${ticker}`, ticker, companyName: ticker, cost: { attempts: [], estimatedUSD: 0.4, complete: true, note: "", durationMs: 90000 }, ...over }) as ResearchRun;
@@ -109,12 +112,14 @@ describe("runMorningForOwner", () => {
     const asked: string[] = [];
     const brief = await runMorningForOwner(owner, {
       db: fakeDb() as never, now, env: {},
-      loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5,
+      loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, ...extras(),
       research: async t => { asked.push(t); return { run: mkRun(t, t === "NVDA" ? "Weak" : "Mixed"), reused: false }; },
     });
-    expect(asked.slice(0, 3).sort()).toEqual(["AMZN", "NBIS", "NVDA"]); expect(asked).toHaveLength(5);
+    expect(asked.sort()).toEqual(["AMZN", "NBIS", "NVDA"]); // only the top holdings get paid deep reports
     expect(brief.items.filter(i => i.role === "discovery")).toHaveLength(2);
-    expect(brief.status).toBe("complete"); expect(brief.cost).toMatchObject({ reports: 5 });
+    expect(brief.items.filter(i => i.role !== "concentrated").every(i => i.tier === "light" && i.screenLabel === "Mixed")).toBe(true);
+    expect(brief.items.find(i => i.role === "exit-watch")).toMatchObject({ symbol: "MSFT", status: "researched" });
+    expect(brief.status).toBe("complete"); expect(brief.cost).toMatchObject({ reports: 3 }); expect(brief.summary).toContain("3 paid deep reports, 3 free screens");
     const nvda = brief.items.find(i => i.symbol === "NVDA")!;
     expect(nvda).toMatchObject({ previousVerdict: "Buy / Add", verdict: "Trim", changed: true });
     expect(brief.concentration!.top3Pct).toBeCloseTo(84, 0); expect(brief.concentration!.flags.join(" ")).toContain("AMZN");
@@ -129,12 +134,12 @@ describe("runMorningForOwner", () => {
     const asked: string[] = [];
     const brief = await runMorningForOwner(owner, {
       db: fakeDb() as never, now, env: {},
-      loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 3,
+      loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 3, ...extras(),
       research: async t => { asked.push(t); if (t === "NBIS") throw new Error("provider down"); return { run: mkRun(t, "Mixed"), reused: false }; },
     });
     expect(asked.sort()).toEqual(["AMZN", "NBIS", "NVDA"]);
     expect(brief.items.find(i => i.symbol === "NBIS")).toMatchObject({ status: "failed", note: "provider down" });
-    expect(brief.items.filter(i => i.role === "discovery").every(i => i.status === "skipped")).toBe(true);
+    expect(brief.items.filter(i => i.role === "discovery").every(i => i.status === "researched" && i.tier === "light")).toBe(true); // free screens are not limited by the paid budget
     expect(brief.status).toBe("partial");
   });
   it("falls back to pinned stocks when holdings cannot be read, and does no research with no budget", async () => {
@@ -143,7 +148,7 @@ describe("runMorningForOwner", () => {
     const { runMorningForOwner } = await import("../lib/server/morning-run");
     const research = vi.fn();
     const brief = await runMorningForOwner(owner, { db: fakeDb() as never, now, env: { MORNING_PINNED: "AMZN,NBIS,NVDA", MORNING_DISCOVERY: "0" },
-      loadHoldings: async () => { throw new Error("down"); }, remainingBudget: async () => 0, research });
+      loadHoldings: async () => { throw new Error("down"); }, remainingBudget: async () => 0, research, ...extras() });
     expect(research).not.toHaveBeenCalled();
     expect(brief.items.map(i => i.symbol)).toEqual(["AMZN", "NBIS", "NVDA"]); expect(brief.items.every(i => i.status === "skipped")).toBe(true);
     expect(brief.concentration).toBeNull(); expect(brief.notes.join(" ")).toContain("could not be read");
@@ -170,7 +175,7 @@ describe("runMorningJob gating", () => {
 
 describe("on-demand steps", () => {
   const stubDeps = (research: (t: string) => Promise<{ run: ResearchRun; reused: boolean }>) => ({
-    db: fakeDb() as never, now, env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, research,
+    db: fakeDb() as never, now, env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, research, ...extras(),
   });
   it("planning spends nothing and lists every stock as waiting, with weights and the previous verdict", async () => {
     vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
@@ -218,7 +223,7 @@ describe("/api/morning", () => {
     vi.doMock("../lib/server/archive", () => ({ archiveContext: async () => ({ owner, db: fakeDb() }) }));
     const mod = await vi.importActual<typeof import("../lib/server/morning-run")>("../lib/server/morning-run");
     vi.doMock("../lib/server/morning-run", () => ({ ...mod, morningDepsFor: () => stubDepsFor() }));
-    function stubDepsFor() { return { db: fakeDb() as never, now: new Date(), env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, research: async (t: string) => ({ run: mkRun(t, "Mixed"), reused: false }) }; }
+    function stubDepsFor() { return { db: fakeDb() as never, now: new Date(), env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, ...extras(), research: async (t: string) => ({ run: mkRun(t, "Mixed"), reused: false }) }; }
     tables = { equity_snapshots: [], equity_followed: [], equity_briefs: [] };
     const { POST } = await import("../app/api/morning/route");
     const planned = await (await POST(post({ step: "plan" }))).json();
@@ -235,18 +240,65 @@ describe("/api/morning", () => {
 
 describe("runs whose analysis did not finish", () => {
   const degraded = (ticker: string) => ({ ...mkRun(ticker, "Mixed"), investmentCase: undefined, score: 0, notes: ["Live evidence loaded, but the AI synthesis failed. No demo score or verdict was substituted.", "Provider note: OpenAI request failed (429)."] }) as unknown as ResearchRun;
-  it("are reported as failed with the reason, never as a verdict change, and stop the new-stock search", async () => {
+  it("are reported as failed with the reason and never as a verdict change", async () => {
     vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
     tables = { equity_snapshots: [{ ticker: "AMZN", payload: mkRun("AMZN", "Mixed", { analyzedAt: "2026-10-10T00:00:00Z", marketAsOf: "2026-10-09" }) }], equity_followed: [] };
     const { runMorningForOwner } = await import("../lib/server/morning-run");
     const asked: string[] = [];
-    const brief = await runMorningForOwner(owner, { db: fakeDb() as never, now, env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5,
+    const brief = await runMorningForOwner(owner, { db: fakeDb() as never, now, env: {}, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5, ...extras(),
       research: async t => { asked.push(t); return { run: degraded(t), reused: false }; } });
     expect(asked.sort()).toEqual(["AMZN", "NBIS", "NVDA"]);
     const amzn = brief.items.find(i => i.symbol === "AMZN")!;
     expect(amzn).toMatchObject({ status: "failed", changed: false, verdict: null }); expect(amzn.note).toContain("analysis did not finish"); expect(amzn.note).toContain("OpenAI request failed");
-    expect(brief.items.filter(i => i.role === "discovery").every(i => i.status === "skipped")).toBe(true);
-    expect(brief.notes.join(" ")).toContain("research is failing"); expect(brief.status).toBe("failed");
+    expect(brief.items.filter(i => i.role !== "concentrated").every(i => i.status === "researched")).toBe(true); // screens still run: they use no AI
+    expect(brief.status).toBe("partial");
     expect(calls.some(c => c.table === "equity_alerts")).toBe(false);
+  });
+});
+
+
+import { needsDeepRefresh, describeScreen, exitWatchCandidates } from "../lib/morning";
+describe("paid deep refresh gate", () => {
+  const rep = (daysAgo: number, price = 100) => ({ ...run("Mixed"), analyzedAt: new Date(now.getTime() - daysAgo * 86400000).toISOString(), asOfPrice: price }) as ResearchRun;
+  it("pays for a deep report only when none exists, it is old, or the price has moved a lot", () => {
+    expect(needsDeepRefresh({ report: undefined, price: 100, now })).toMatchObject({ deep: true, reason: expect.stringContaining("No deep report") });
+    expect(needsDeepRefresh({ report: rep(8), price: 100, now })).toMatchObject({ deep: true, reason: expect.stringContaining("8 days old") });
+    expect(needsDeepRefresh({ report: rep(2), price: 108, now })).toMatchObject({ deep: true, reason: expect.stringContaining("+8.0%") });
+    expect(needsDeepRefresh({ report: rep(2), price: 92, now })).toMatchObject({ deep: true });
+    const calm = needsDeepRefresh({ report: rep(2), price: 103, now }); expect(calm.deep).toBe(false); expect(calm.reason).toContain("no new paid report needed");
+    expect(needsDeepRefresh({ report: rep(2), price: null, now }).deep).toBe(false);
+  });
+  it("honours custom limits and a literal every-morning setting", () => {
+    expect(needsDeepRefresh({ report: rep(2), price: 100, now, maxAgeDays: 2 }).deep).toBe(true);
+    expect(needsDeepRefresh({ report: rep(1), price: 104, now, movePct: 3 }).deep).toBe(true);
+    expect(needsDeepRefresh({ report: rep(0), price: 100, now, always: true })).toMatchObject({ deep: true });
+  });
+});
+
+describe("free tiers in the morning job", () => {
+  it("reuses a recent deep report for a top holding and spends nothing", async () => {
+    vi.doMock("../lib/server/supabase", () => ({ database: () => fakeDb() }));
+    const fresh = mkRun("AMZN", "Mixed", { analyzedAt: "2026-10-22T00:00:00Z", marketAsOf: "2026-10-21", asOfPrice: 100 });
+    tables = { equity_snapshots: [{ ticker: "AMZN", payload: fresh }], equity_followed: [] };
+    const { runMorningForOwner } = await import("../lib/server/morning-run");
+    const asked: string[] = [];
+    const brief = await runMorningForOwner(owner, { db: fakeDb() as never, now, env: { MORNING_DISCOVERY: "0", MORNING_EXIT_SCAN: "0" }, loadHoldings: async () => ({ holdings, notes: [] }), remainingBudget: async () => 5,
+      screen: async t => ({ run: lightRun(t), reused: false }), quote: async t => t === "AMZN" ? 102 : null, research: async t => { asked.push(t); return { run: mkRun(t, "Mixed"), reused: false }; } });
+    const amzn = brief.items.find(i => i.symbol === "AMZN")!;
+    expect(amzn).toMatchObject({ tier: "reuse", status: "reused", verdict: "Hold", changed: false }); expect(amzn.lines.join(" ")).toContain("no new paid report needed");
+    expect(asked.sort()).toEqual(["NBIS", "NVDA"]);
+  });
+  it("a screen is never a verdict, flags a weak holding for a deep look, and says what it lacks", () => {
+    const screen = { label: "Skip for now", total: -3, signals: [{ key: "cash", label: "Profit and cash", score: -1, detail: "" }, { key: "growth", label: "Expected growth", score: 1, detail: "" }], missing: ["a peer comparison"], note: "" } as never;
+    const owned = describeScreen(screen, true).join(" "), idea = describeScreen({ ...(screen as object), label: "Worth a deep look" } as never, false).join(" ");
+    expect(owned).toContain("not a verdict"); expect(owned).toContain("screens weak"); expect(owned).toContain("a peer comparison");
+    expect(idea).toContain("Run a deep report before acting");
+  });
+  it("rotates which other holding is screened and skips funds and the top holdings", () => {
+    const hold = h([["AMZN", 6, 100], ["MSFT", 1, 100], ["KO", 1, 90], ["PG", 1, 80], ["VTI", 5, 100, "fund"]], 2000);
+    const exclude = new Set(["AMZN"]);
+    expect(exitWatchCandidates(hold, exclude, 0, 2)).toEqual(["MSFT", "KO"]);
+    expect(exitWatchCandidates(hold, exclude, 1, 2)).toEqual(["KO", "PG"]);
+    expect(exitWatchCandidates(hold, exclude, 2, 5)).toHaveLength(3); expect(exitWatchCandidates(hold, exclude, 0, 0)).toEqual([]);
   });
 });

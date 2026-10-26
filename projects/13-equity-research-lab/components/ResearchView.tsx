@@ -11,6 +11,7 @@ import { ExecutiveSummary } from "./ExecutiveSummary";
 import { StockHistory } from "./StockHistory";
 import { StockTriggers } from "./StockTriggers";
 import { ReportQuality } from "./ReportQuality";
+import { ScreenPanel } from "./ScreenPanel";
 import { HistoricalRange } from "./HistoricalRange";
 import { DecisionHeader } from "./DecisionHeader";
 import { ScoreBreakdown } from "./ScoreBreakdown";
@@ -51,6 +52,7 @@ export function ResearchView({ run }: { run: ResearchRun }) {
     {run.dataMode !== "demo" && !hasScores && <div className="warning"><strong>Live-data mode, incomplete analysis.</strong> The app did not substitute demo scores when a provider or AI synthesis failed. Check Research notes below.</div>}
 
     {run.dataMode !== 'demo' && <section className="panel"><h2>Research completion</h2><p>{completionState(run).note}</p>{completionState(run).status === 'evidence blocked' && <ul>{completionState(run).gaps.map(gap=><li key={gap}>{gap}</li>)}</ul>}{completionState(run).followUp && <RunResearch ticker={run.ticker} complete reportId={run.id} />}</section>}
+    <ScreenPanel run={run} />
     <DecisionHeader run={run} />
     <ExecutiveSummary run={run} />
     <ScoreBreakdown run={run} />

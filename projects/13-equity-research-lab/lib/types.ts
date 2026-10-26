@@ -1,5 +1,6 @@
 import type { ThesisReview } from "./thesis-review";
 import type { CurrentAffairs } from "./current-affairs";
+import type { ScreenResult } from "./screen";
 export type ScoreKey =
   | "businessQuality"
   | "financialPerformance"
@@ -115,6 +116,9 @@ export type ResearchRun = {
   thesisKillers: string[];
   thesisReview?: ThesisReview;
   currentAffairs?: CurrentAffairs;
+  /** "light" runs use no AI: a free quick screen instead of a rated report. Absent means a deep (AI) report. */
+  tier?: "deep" | "light";
+  screen?: ScreenResult;
   optionIdeas: OptionIdea[];
   benchmark: string;
   expectedReturn12m: { low: number; high: number };
