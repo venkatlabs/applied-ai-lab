@@ -1,5 +1,5 @@
 import type { ResearchRun } from "./types";
-import { researchOutcome, latestByTicker, type Outcome } from "./outcome";
+import { researchOutcome, latestByTicker, isRated, type Outcome } from "./outcome";
 import { hurdleView, type HurdleView } from "./hurdle";
 
 /** Pure model behind the "My stocks" home: one row per stock you own, follow or have researched. */
@@ -26,7 +26,11 @@ export function sinceCall(run: ResearchRun | undefined, outcome: Outcome, latest
 }
 
 function priority(owned: boolean, following: boolean, o: Outcome): number {
-  if (o.verdict === "Not researched") return owned ? 0 : following ? 5 : 6;
+  if (o.verdict === "Not researched") {
+    if (o.screen?.label === "Skip for now" && owned) return 1;
+    if (o.screen?.label === "Worth a deep look") return owned ? 2 : 3;
+    return owned ? 0 : following ? 5 : 6;
+  }
   if (owned && (o.verdict === "Sell / Avoid" || o.verdict === "Trim")) return 1;
   if (owned && o.needsRefresh) return 2;
   if (o.verdict === "Buy / Add") return 3;
@@ -40,7 +44,8 @@ export function buildStockRows(input: { owned: string[]; following: string[]; ru
   for (const r of input.runs) if (r.dataMode !== "demo") counts.set(r.ticker, (counts.get(r.ticker) ?? 0) + 1);
   const owned = new Set(input.owned.map(s => s.toUpperCase()).filter(valid));
   const following = new Set(input.following.map(s => s.toUpperCase()).filter(valid));
-  const symbols = new Set([...owned, ...following, ...latest.keys()]);
+  // A stock that was only given a free quick screen is listed only if you own or follow it.
+  const symbols = new Set([...owned, ...following, ...[...latest.entries()].filter(([, r]) => isRated(r)).map(([k]) => k)]);
   const rows = [...symbols].map((symbol): StockRow => {
     const report = latest.get(symbol), outcome = researchOutcome(report, now);
     const isOwned = owned.has(symbol), isFollowing = following.has(symbol);

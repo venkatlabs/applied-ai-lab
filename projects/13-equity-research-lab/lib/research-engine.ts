@@ -2,6 +2,7 @@ import { buildDistribution } from "./scenario-distribution";
 import { completionState } from './research-completion';
 import { researchGaps } from './server/web-research';
 import { validateCurrentAffairs } from "./current-affairs";
+import { buildScreen } from "./screen";
 import { validateThesisReview, researchQuestions } from "./thesis-review";
 import { peerResearch } from "./server/peer-research";
 import { assessDecisionEvidence } from "./decision-evidence";
@@ -64,11 +65,11 @@ function dimensionCoverage(args: {
 }
 
 
-export async function runResearch(tickerRaw: string, focus?: string[]): Promise<ResearchRun> {
-  const {value,cost}=await withCosts(async()=>{ const result = await research(tickerRaw, focus); result.researchCompletion = completionState({...result, researchCompletion: {attempted: !!focus} as ResearchRun["researchCompletion"]}); return result; });
+export async function runResearch(tickerRaw: string, focus?: string[], tier: "deep" | "light" = "deep"): Promise<ResearchRun> {
+  const {value,cost}=await withCosts(async()=>{ const result = await research(tickerRaw, focus, tier); result.researchCompletion = completionState({...result, researchCompletion: {attempted: !!focus} as ResearchRun["researchCompletion"]}); return result; });
   return {...value,cost};
 }
-async function research(tickerRaw: string, focus?: string[]): Promise<ResearchRun> {
+async function research(tickerRaw: string, focus?: string[], tier: "deep" | "light" = "deep"): Promise<ResearchRun> {
   const ticker = tickerRaw.trim().toUpperCase();
   if (!/^[A-Z.\-]{1,10}$/.test(ticker)) throw new Error("Invalid ticker symbol");
   if (process.env.NEXT_PUBLIC_APP_MODE !== "live") return demoResearch(ticker);
@@ -135,11 +136,12 @@ async function research(tickerRaw: string, focus?: string[]): Promise<ResearchRu
 
   const peerWork=peerResearch(ticker,fundamentals,market,run.analyzedAt).catch(()=>undefined);
   try {
+    if (tier === "light") throw new Error("quick screen: no AI");
     run.integratedResearch = focus ? await researchGaps(run, true, focus) : await integratedResearch(run);
     for (const source of run.integratedResearch.citations) {
       if (!citations.some(c => c.url === source.url)) citations.push({ title: source.title, url: source.url, source: "Web research", retrievedAt: run.integratedResearch.generatedAt, tier: 3 });
     }
-  } catch { errors.push(focus ? "The targeted evidence follow-up did not complete. Unsupported factors remain unknown; automatic attempts have stopped." : "Automatic web research did not complete. Unsupported investment factors remain unknown."); }
+  } catch { if (tier !== "light") errors.push(focus ? "The targeted evidence follow-up did not complete. Unsupported factors remain unknown; automatic attempts have stopped." : "Automatic web research did not complete. Unsupported investment factors remain unknown."); }
 
   run.peerValuation=await peerWork;
   for(const row of run.peerValuation?.rows??[])for(const c of row.sources)if(!citations.some(x=>x.url===c.url))citations.push(c);
@@ -184,6 +186,20 @@ async function research(tickerRaw: string, focus?: string[]): Promise<ResearchRu
   });
   run.intrinsicValuation = intrinsic;
   const scenarios = valuationScenarios(intrinsic, market.price);
+  if (tier === "light") {
+    // Free quick screen: filings, quote, deterministic DCF and peers only. No web research and no AI synthesis.
+    run.tier = "light";
+    run.screen = buildScreen({
+      price: market.price, priceAvg50: market.priceAvg50, priceAvg200: market.priceAvg200,
+      netIncome: fundamentals?.netIncome, freeCashFlow: fundamentals?.freeCashFlow, operatingCashFlow: fundamentals?.operatingCashFlow, cash: fundamentals?.cash, debt: fundamentals?.debt,
+      intrinsic: intrinsic.available ? { available: true, upsidePct: intrinsic.upsidePct } : { available: false },
+      growth: intrinsic.available ? intrinsic.growth : null, peerRelativeDiscount: run.peerValuation?.relativeDiscount ?? null,
+    });
+    run.asOfPrice = market.price;
+    run.scenarios = scenarios;
+    run.notes = ["Quick screen only: no web research and no AI analysis were run, so there is no rating. Run deep research to get a verdict.", ...errors.map(x => `Data coverage note: ${x}`)];
+    return run;
+  }
   const evidence = {
     peerValuation: run.peerValuation ?? {status:"incomplete",note:"No supported peer group is configured. Do not invent a benchmark."},
     integratedWebResearch: run.integratedResearch ?? null,

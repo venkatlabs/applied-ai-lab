@@ -78,6 +78,7 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 
 ## Log
 
+- 2026-10-26 Claude: cost tiers after OpenAI billing/bank declines. Deep (paid) only on demand and for top-3 holdings when the latest report is missing/7 days old/price moved 7%; free quick screens (no AI) for new ideas and rotating exit-watch of other holdings; no automatic paid follow-up; MORNING_RESEARCH_MAX default 3; own LIGHT_DAILY_CAP. docs/COST_TIERS_2026-10-26.md.
 - 2026-10-25 Claude: merged current main (93720a5) into `claude/supabase-rls-001-init` so PR #16 is mergeable; only HANDOFF.md conflicted, all newer log entries kept. tsc, 344 tests and build pass. Migration 005 still NOT applied to the live DB; awaiting Venkat's merge and migration approval.
 - 2026-10-25 Claude: addressed both PR #16 review threads. README deployment now lists migrations in order and calls out 005; the RLS guard regex now matches plain `create table`. tsc, 344 tests and build pass. Still NOT applied to the live DB; awaiting Venkat merge + migration approval.
 
