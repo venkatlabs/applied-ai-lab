@@ -37,11 +37,22 @@ export function evaluateBudget(used: number | null, cap: number, allowUnmetered:
     : { metered: true, used, cap, remaining: 0, reason: `Daily research budget reached (${cap} new live reports per UTC day). Saved reports still open. Try again after 00:00 UTC or raise RESEARCH_DAILY_CAP.` };
 }
 
+// Quick screens ("light" tier) are saved as snapshots too but have their own cap
+// (claimLightSlot), so they must not use up the paid floor. Rows without a tier
+// predate tiers and were all paid reports.
+export const PAID_TIER_FILTER = "payload->>tier.is.null,payload->>tier.neq.light";
+
+type SnapshotCounter = { from: (table: "equity_snapshots") => any };
+
+export async function paidReportsSince(db: SnapshotCounter, since: string): Promise<number | null> {
+  const { count, error } = await db.from("equity_snapshots").select("id", { count: "exact", head: true })
+    .gte("analyzed_at", since).or(PAID_TIER_FILTER);
+  return error || count == null ? null : count;
+}
+
 async function liveReportsToday(): Promise<number | null> {
   const db = database();
-  if (!db) return null;
-  const { count, error } = await db.from("equity_snapshots").select("id", { count: "exact", head: true }).gte("analyzed_at", utcDayStart());
-  return error || count == null ? null : count;
+  return db ? paidReportsSince(db, utcDayStart()) : null;
 }
 
 export async function researchBudget(): Promise<BudgetStatus> {
