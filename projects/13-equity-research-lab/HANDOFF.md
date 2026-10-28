@@ -85,6 +85,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - 2026-10-27 Claude: free quick screens no longer count against the paid daily cap. `liveReportsToday()` counted every snapshot today, including light-tier screens that already have their own cap; the paid floor now excludes `payload->>tier = light` (untiered legacy rows still count). Helper `paidReportsSince()` with tests. Same-day reservations already made under the old count stay until 00:00 UTC.
 
 - 2026-10-26 Claude: cost tiers after OpenAI billing/bank declines. Deep (paid) only on demand and for top-3 holdings when the latest report is missing/7 days old/price moved 7%; free quick screens (no AI) for new ideas and rotating exit-watch of other holdings; no automatic paid follow-up; MORNING_RESEARCH_MAX default 3; own LIGHT_DAILY_CAP. docs/COST_TIERS_2026-10-26.md.
+- 2026-10-25 Claude: merged current main (93720a5) into `claude/supabase-rls-001-init` so PR #16 is mergeable; only HANDOFF.md conflicted, all newer log entries kept. tsc, 344 tests and build pass. Migration 005 still NOT applied to the live DB; awaiting Venkat's merge and migration approval.
+- 2026-10-25 Claude: addressed both PR #16 review threads. README deployment now lists migrations in order and calls out 005; the RLS guard regex now matches plain `create table`. tsc, 344 tests and build pass. Still NOT applied to the live DB; awaiting Venkat merge + migration approval.
 
 - 2026-10-24 Claude: root cause of the failed morning reports = expired OpenAI API key (HTTP 401 expired_secret_key in the report notes). Added providerFailure() and guardedResearch(): a run that never reached the AI because of an expired key or no credit returns its budget slot, saves nothing and shows a clear fix; other unrated runs are kept only for the interactive flow. Owner action: create a new OpenAI key, set OPENAI_API_KEY in Vercel, redeploy.
 
@@ -103,6 +105,11 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - 2026-10-16 Claude: UX rebuild. Google OIDC sign-in with email allowlist (env: GOOGLE_CLIENT_ID/SECRET, AUTH_SECRET, OWNER_EMAILS; unset = old behavior), archive owned by account + legacy workspace claim (migration 006), followed stocks on the account (migration 007), research outcome (verdict + confidence, never 'no answer'), My stocks home with batch research of unresearched holdings (confirm + budget cap), per-stock history, automatic research calls journal. Owner-key flow kept only as fallback when Google sign-in is not configured.
 
 - 2026-10-16 Claude: built P0 (current-affairs evidence cards with citation/date validation, score breakdown, responsive decision header), engine v0.15.0, no extra paid call. PR #28 merged as `1290bd1`. Holder released.
+
+### 2026-10-09 — Claude: Supabase hardening (branch `claude/supabase-rls-001-init`, PR open)
+- Migration `005_lock_legacy_001_tables.sql` enables RLS (no policies) and revokes anon/authenticated on `research_runs`, `claims`, `retrospective_results` (unused by app code; not dropped, no data loss). Guard test `tests/migrations-rls.test.ts` fails if a new public table lacks RLS. 207 tests, tsc and build pass.
+- Identity/recovery design note: all reads/writes use the server-only service-role key, so RLS is defence in depth and the app is the only access control. Snapshots are keyed by `owner_hash` derived from the anonymous workspace cookie; clearing the cookie orphans the archive and there is no recovery path. Recommended: the owner-auth work in PR #11, then an owner-keyed export/restore of `equity_snapshots`; later scope a narrower DB role than service-role for read-only routes.
+- Not applied to the live database; Venkat applies after merge. Notion card stays open until merged and applied.
 
 ### 2026-10-08 — Codex: five-case research view (PR #15)
 - Adapted IONS, XENE, FRMI, FRVO and Corteva chat structure: clear rating/decision, scenario distribution, operating drivers, downside, timing and change conditions. Chat market facts were not imported; arithmetic inconsistencies informed deterministic regression tests.
