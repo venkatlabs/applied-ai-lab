@@ -3,9 +3,9 @@
 > The baton. Read this first and update it last. Protocol: `AGENTS.md`.
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
-**Current holder:** none. Claude PRs #30–#33 and Codex PRs #34–#35 merged; the outcome-consistency PR is the newest.
-**Last updated:** 2026-10-21 by Claude. Resumed; baseline 286 tests green. Made the holdings advice and stock action summary use the same research outcome as My stocks (verdict + confidence), so a stock with incomplete evidence no longer reads "Research first" while My stocks shows a verdict. Reports up to 90 days old still inform verdicts; new-position buy candidates still need a report 30 days old or newer. Owner setup still pending (see Next up). Unverified live: Google sign-in, migrations 006/007/008, cron runs, prompt v0.15.1 on a real report.
-**Prior update:** 2026-10-20 by Claude (UX rebuild, hurdle price, Watch).
+**Current holder:** none. Claude PR `claude/budget-exclude-light-screens` (paid budget counting fix) is open for review.
+**Last updated:** 2026-10-27 by Claude. Read-only review of the live app, then fixed the paid research budget: free quick screens were counted as paid reports, so a brief with 4 screens and 0 paid reports showed "0 of 4 left" and blocked on-demand research. Baseline and branch: tsc, 356 tests and build pass. Unverified live: the PostgREST `payload->>tier` filter against the real archive (check the budget after the next quick-screen-only brief).
+**Prior update:** 2026-10-21 by Claude. Resumed; baseline 286 tests green. Made the holdings advice and stock action summary use the same research outcome as My stocks (verdict + confidence), so a stock with incomplete evidence no longer reads "Research first" while My stocks shows a verdict. Reports up to 90 days old still inform verdicts; new-position buy candidates still need a report 30 days old or newer. Owner setup still pending (see Next up). Unverified live: Google sign-in, migrations 006/007/008, cron runs, prompt v0.15.1 on a real report.
 **Main baseline:** `fb024f2` (PR #34 decision-action layer).
 **Latest feature work:** PR #34 / merge `fb024f2` (decision-action layer); PR #33 / merge `d1cd677` (Watch).
 **Validation:** final PR #34 head `f5ae4ef` passed TypeScript, automated tests and production build; both Vercel PR preview checks passed. Post-merge Vercel deployments for both the Equity Research Lab and repo root passed on merge `fb024f2`. No paid research, live brokerage refresh or trades were performed for this change.
@@ -66,6 +66,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 2. Build the next approved decision milestone on the shared portfolio: compare destination allocations and staged reductions with clearer cost-basis and uncertainty handling. Keep alternatives user-editable and avoid forced Buy labels.
 3. Verify imported mutual-fund classification before fund look-through, then continue Monarch where its official MCP is available, historical ROI (XIRR/TWR only with sufficient dates/flows), and prospective benchmark validation. No automatic sync/research or trades.
 
+4. Any agent, from the 2026-10-27 live review (report quality first): scores swing between runs at the same price and evidence (degraded follow-up runs, factor ratings flipping); the five-case model can use exit multiples far above the current one, giving a weighted return far above the DCF; an Unknown valuation scores like Mixed and keeps Medium confidence; the AMZN DCF base includes one-off investment gains; "No clear weaknesses" shows beside listed risks; history re-scores old reports instead of showing stored values. UX: hidden portfolio values are still in the DOM, the AMZN card says keep while the brief and report say trim, concentration differs between brief and report, QCOM/NTNX missing from the owned list, "Researched today" on day-old reports. Venkat is redesigning the UX in Figma, so fix logic, not screens.
+
 ## Open questions for Venkat
 
 - Venkat reports that separate SnapTrade Personal credentials are configured in Vercel. The existing ChatGPT SnapTrade connection does not supply credentials to this website. Do not share any key through chat or Notion. First live refresh remains unverified.
@@ -77,6 +79,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-27 Claude: free quick screens no longer count against the paid daily cap. `liveReportsToday()` counted every snapshot today, including light-tier screens that already have their own cap; the paid floor now excludes `payload->>tier = light` (untiered legacy rows still count). Helper `paidReportsSince()` with tests. Same-day reservations already made under the old count stay until 00:00 UTC.
 
 - 2026-10-26 Claude: cost tiers after OpenAI billing/bank declines. Deep (paid) only on demand and for top-3 holdings when the latest report is missing/7 days old/price moved 7%; free quick screens (no AI) for new ideas and rotating exit-watch of other holdings; no automatic paid follow-up; MORNING_RESEARCH_MAX default 3; own LIGHT_DAILY_CAP. docs/COST_TIERS_2026-10-26.md.
 
