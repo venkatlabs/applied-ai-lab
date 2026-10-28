@@ -3,12 +3,12 @@
 > The baton. Read this first and update it last. Protocol: `AGENTS.md`.
 > Notion mirror: 🧠 Venkat AI Hub → Project — Equity Research Lab → Handoff log.
 
-**Current holder:** none. Claude PR `claude/budget-exclude-light-screens` (paid budget counting fix) is open for review.
-**Last updated:** 2026-10-27 by Claude. Read-only review of the live app, then fixed the paid research budget: free quick screens were counted as paid reports, so a brief with 4 screens and 0 paid reports showed "0 of 4 left" and blocked on-demand research. Baseline and branch: tsc, 356 tests and build pass. Unverified live: the PostgREST `payload->>tier` filter against the real archive (check the budget after the next quick-screen-only brief).
+**Current holder:** none. Claude PR #44 (paid budget counting fix) merged as `d09bc4e`.
+**Last updated:** 2026-10-27 by Claude. Read-only review of the live app, then fixed the paid research budget: free quick screens were counted as paid reports, so a brief with 4 screens and 0 paid reports showed "0 of 4 left" and blocked on-demand research. Merged as PR #44. Unverified live: the PostgREST `payload->>tier` filter against the real archive (check the budget after the next quick-screen-only brief; reservations made before the fix stay until 00:00 UTC).
 **Prior update:** 2026-10-21 by Claude. Resumed; baseline 286 tests green. Made the holdings advice and stock action summary use the same research outcome as My stocks (verdict + confidence), so a stock with incomplete evidence no longer reads "Research first" while My stocks shows a verdict. Reports up to 90 days old still inform verdicts; new-position buy candidates still need a report 30 days old or newer. Owner setup still pending (see Next up). Unverified live: Google sign-in, migrations 006/007/008, cron runs, prompt v0.15.1 on a real report.
-**Main baseline:** `fb024f2` (PR #34 decision-action layer).
-**Latest feature work:** PR #34 / merge `fb024f2` (decision-action layer); PR #33 / merge `d1cd677` (Watch).
-**Validation:** final PR #34 head `f5ae4ef` passed TypeScript, automated tests and production build; both Vercel PR preview checks passed. Post-merge Vercel deployments for both the Equity Research Lab and repo root passed on merge `fb024f2`. No paid research, live brokerage refresh or trades were performed for this change.
+**Main baseline:** `d09bc4e` (PR #44 paid budget counting fix).
+**Latest feature work:** PR #44 / merge `d09bc4e` (quick screens excluded from the paid cap); PR #42 / merge `0fd5eb8` (cost tiers).
+**Validation:** PR #44 head `06149d0` passed TypeScript, 356 tests and production build locally and in PR CI; Vercel preview checks passed. Post-merge Vercel deployments for both the Equity Research Lab and repo root passed on merge `d09bc4e`. No paid research, settings change, brokerage refresh or trades were performed for this change.
 **Notion plan:** https://app.notion.com/p/3eddf6e02bd78120a3fcf8f8cc768af1
 
 ## State
@@ -79,6 +79,8 @@ Codex paused on 2026-09-25 because of credit limits. Claude reviewed the project
 - FMP plan upgrade vs an SEC-only tier for mid-caps?
 
 ## Log
+
+- 2026-10-27 Claude: PR #44 merged as `d09bc4e`; both post-merge Vercel deployments passed. Live budget count not yet observed after a screen-only brief.
 
 - 2026-10-27 Claude: free quick screens no longer count against the paid daily cap. `liveReportsToday()` counted every snapshot today, including light-tier screens that already have their own cap; the paid floor now excludes `payload->>tier = light` (untiered legacy rows still count). Helper `paidReportsSince()` with tests. Same-day reservations already made under the old count stay until 00:00 UTC.
 
