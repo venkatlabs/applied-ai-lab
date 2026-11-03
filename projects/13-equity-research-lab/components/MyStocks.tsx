@@ -5,6 +5,7 @@ import { usePortfolioSession } from './PortfolioSession';
 import { connectedHoldings } from '@/lib/connected-portfolio';
 import { readHoldings } from '@/lib/holdings';
 import { loadArchive } from '@/lib/archive';
+import { calendarDaysAgo } from '@/lib/outcome';
 import { loadChecks, runChecks } from '@/lib/watchlist';
 import { loadFollowed, removeFollowed, saveFollowed } from '@/lib/followed';
 import { buildStockRows, researchQueue, summarize, type StockRow } from '@/lib/stock-list';
@@ -116,7 +117,7 @@ function StockCard({ row, onRemove, flag }: { row: StockRow; onRemove: () => voi
       {o.confidence && <span className="muted">{o.confidence} confidence · score {o.score}</span>}</div>
     <div className="stock-why"><p>{o.verdict === 'Not researched' ? o.headline : row.owned ? o.ownedAction : o.notOwnedAction}</p>
       {o.screen && <p className="muted">Quick screen (no AI): <strong>{o.screen.label}</strong>. {o.screen.signals.filter(x => x.score !== 0).map(x => x.label.toLowerCase() + (x.score > 0 ? ' +' : ' −')).join(', ')}</p>}
-      <p className="muted">{o.analyzedAt ? `Researched ${ago(o.ageDays)}${o.needsRefresh ? ' · refresh recommended' : ''}` : 'Never researched'}
+      <p className="muted">{o.analyzedAt ? `Researched ${ago(calendarDaysAgo(o.analyzedAt))}${o.needsRefresh ? ' · refresh recommended' : ''}` : 'Never researched'}
         {row.sinceCall && ` · since the call: ${row.sinceCall.movePct > 0 ? '+' : ''}${row.sinceCall.movePct}% in ${row.sinceCall.days} days ${row.sinceCall.right ? '✓' : '✗'}`}</p>
       {row.hurdle && <p className="muted">{row.hurdle.clears ? `Clears your ${Math.round(row.hurdle.hurdle * 100)}% hurdle at $${row.hurdle.referencePrice.toFixed(2)}` : `Needs a price at or below $${row.hurdle.hurdlePrice.toFixed(2)} to clear your ${Math.round(row.hurdle.hurdle * 100)}% hurdle (${row.hurdle.gapPct}% below $${row.hurdle.referencePrice.toFixed(2)})`} · model-weighted expected return {row.hurdle.expectedReturnPct}%</p>}
       {o.confidence === 'Low' && o.missing.length > 0 && <p className="muted">Missing: {o.missing.slice(0, 3).join('; ')}.</p>}</div>

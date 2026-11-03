@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { researchOutcome, verdictForScore, latestByTicker } from "../lib/outcome";
+import { researchOutcome, verdictForScore, latestByTicker, freezeOutcome, savedOutcome, calendarDaysAgo } from "../lib/outcome";
 import { factorKeys } from "../lib/investment";
 import type { ResearchRun } from "../lib/types";
 
@@ -103,4 +103,38 @@ it("a newer run with no rating never hides an older rated report, and says why i
   expect(researchOutcome(failed, now)).toMatchObject({ verdict: "Not researched" });
   expect(researchOutcome(failed, now).headline).toContain("analysis did not finish");
   expect(researchOutcome({ ...failed, notes: [] } as ResearchRun, now).headline).toContain("older report");
+});
+
+describe("consistent reasons and frozen history", () => {
+  it("lists the report's own risks and highlights when no factor sits above or below neutral", () => {
+    const o = researchOutcome(run({}, { highlights: ["Strong cash generation"], risks: ["Customer concentration"] }), now);
+    expect(o.reasonsFor).toEqual(["Strong cash generation"]);
+    expect(o.reasonsAgainst).toEqual(["Customer concentration"]);
+    // factor-based reasons still win when factors do move the score
+    const weak = researchOutcome(run({ cash: "Weak" }, { risks: ["Customer concentration"] }), now);
+    expect(weak.reasonsAgainst[0]).toContain("Profit, cash and funding");
+  });
+  it("freezes the outcome at save time and history keeps showing it after the rules change", () => {
+    const r = run(Object.fromEntries(factorKeys.map(k => [k, "Strong"])));
+    const frozen = freezeOutcome(r)!;
+    expect(frozen).toMatchObject({ verdict: "Buy / Add", score: 70, confidence: "High" });
+    // Same stored report, later changed factors (as if rules or ratings were recomputed): the stored outcome stands.
+    const later = { ...r, outcomeAtSave: frozen, investmentCase: run({ valuation: "Unknown" }).investmentCase } as ResearchRun;
+    expect(savedOutcome(later)).toEqual(frozen);
+    expect(researchOutcome(later, now).confidence).toBe("Low");
+    // Older reports without a stored outcome are computed from their saved factors.
+    expect(savedOutcome(run({}))).toMatchObject({ verdict: "Hold", score: 50 });
+  });
+  it("does not freeze an unrated report", () => {
+    expect(freezeOutcome(run({}, { investmentCase: undefined, score: 0 }))).toBeUndefined();
+  });
+  it("counts calendar days in the viewer's time zone, not elapsed hours", () => {
+    const la = "America/Los_Angeles";
+    // 10 pm yesterday and 6 am today in Los Angeles are 8 hours apart but on different days.
+    expect(calendarDaysAgo("2026-11-03T05:00:00Z", new Date("2026-11-03T13:00:00Z"), la)).toBe(1);
+    expect(calendarDaysAgo("2026-11-03T08:00:00Z", new Date("2026-11-03T13:00:00Z"), la)).toBe(0);
+    expect(calendarDaysAgo("2026-10-27T20:00:00Z", new Date("2026-11-03T13:00:00Z"), la)).toBe(7);
+    expect(calendarDaysAgo("not a date")).toBeNull();
+    expect(calendarDaysAgo("2026-11-04T00:00:00Z", new Date("2026-11-03T00:00:00Z"), la)).toBe(0); // never negative
+  });
 });

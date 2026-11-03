@@ -72,6 +72,8 @@ export type OptionIdea = {
 export type ExecutiveSummary = { overview: string; strength: string; concern: string; watchFor: string };
 
 export type ResearchRun = {
+  /** Verdict, score and confidence frozen when the report was written. History shows this, not a recomputation. */
+  outcomeAtSave?: import("./outcome").FrozenOutcome;
   scenarioDistribution?: import("./scenario-distribution").Distribution;
   researchCompletion?: import("./research-completion").ResearchCompletion;
   peerValuation?: import("./peer-valuation").PeerValuation;
