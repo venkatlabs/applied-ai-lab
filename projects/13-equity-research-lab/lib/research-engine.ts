@@ -1,4 +1,5 @@
 import { buildDistribution, marketChecks } from "./scenario-distribution";
+import { freezeOutcome } from "./outcome";
 import { completionState } from './research-completion';
 import { researchGaps } from './server/web-research';
 import { validateCurrentAffairs } from "./current-affairs";
@@ -306,5 +307,6 @@ async function research(tickerRaw: string, focus?: string[], tier: "deep" | "lig
     run.notes = ["Live evidence loaded, but the AI synthesis failed. No demo score or verdict was substituted.", ...errors.map((x) => `Provider note: ${x}`)];
   }
 
+  run.outcomeAtSave = freezeOutcome(run);
   return run;
 }

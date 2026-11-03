@@ -125,8 +125,12 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
 
   const impact = factorKeys.filter(k => thesis.factors[k].rating !== "Unknown").map(k => ({ k, d: factorWeights[k] * (factorPoints[thesis.factors[k].rating] - 50) }));
   const text = (k: (typeof factorKeys)[number]) => `${factorLabels[k]}: ${shorten(thesis.factors[k].reason)}`;
-  const reasonsFor = impact.filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 3).map(x => text(x.k));
-  const reasonsAgainst = impact.filter(x => x.d < 0).sort((a, b) => a.d - b.d).slice(0, 3).map(x => text(x.k));
+  // When no factor sits clearly above or below neutral, fall back to the report's own highlights and
+  // risks so the page never says "no weaknesses" beside a list of risks.
+  const factorFor = impact.filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 3).map(x => text(x.k));
+  const factorAgainst = impact.filter(x => x.d < 0).sort((a, b) => a.d - b.d).slice(0, 3).map(x => text(x.k));
+  const reasonsFor = factorFor.length ? factorFor : (run.highlights ?? []).slice(0, 3).map(h => shorten(h));
+  const reasonsAgainst = factorAgainst.length ? factorAgainst : (run.risks ?? []).slice(0, 3).map(r => shorten(r));
 
   const missing = factorKeys.filter(k => !known.includes(k)).map(k => `${factorLabels[k]} evidence`);
   if (!priceFresh) missing.push("a recent verified share price");
@@ -148,4 +152,30 @@ export function latestByTicker(runs: ResearchRun[]): Map<string, ResearchRun> {
   const better = (a: ResearchRun, b: ResearchRun) => isRated(a) !== isRated(b) ? isRated(a) : a.analyzedAt > b.analyzedAt;
   for (const r of runs) if (r.dataMode !== "demo" && (!out.has(r.ticker) || better(r, out.get(r.ticker)!))) out.set(r.ticker, r);
   return out;
+}
+
+/** The verdict as it stood when the report was written; later rule changes must not rewrite past reports. */
+export type FrozenOutcome = Pick<Outcome, "verdict" | "lean" | "score" | "confidence" | "confidencePoints">;
+export function freezeOutcome(run: ResearchRun): FrozenOutcome | undefined {
+  if (!isRated(run)) return undefined;
+  const o = researchOutcome(run, new Date(run.analyzedAt));
+  return { verdict: o.verdict, lean: o.lean, score: o.score, confidence: o.confidence, confidencePoints: o.confidencePoints };
+}
+/** History view: the stored outcome when the report has one, otherwise computed from the saved factors (older reports). */
+export function savedOutcome(run: ResearchRun): FrozenOutcome {
+  if (run.outcomeAtSave) return run.outcomeAtSave;
+  const o = researchOutcome(run, new Date(run.analyzedAt));
+  return { verdict: o.verdict, lean: o.lean, score: o.score, confidence: o.confidence, confidencePoints: o.confidencePoints };
+}
+
+/**
+ * Whole calendar days between the report date and today in the viewer's time zone. A report from 10 pm yesterday
+ * is "yesterday" at 6 am, even though fewer than 24 hours have passed. Refresh thresholds keep using elapsed days.
+ */
+export function calendarDaysAgo(iso: string, now: Date = new Date(), timeZone?: string): number | null {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+  const day = (d: Date) => Date.parse(`${fmt.format(d)}T00:00:00Z`);
+  return Math.max(0, Math.round((day(now) - day(new Date(t))) / dayMs));
 }
