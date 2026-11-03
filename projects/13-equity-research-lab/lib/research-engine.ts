@@ -14,7 +14,8 @@ import { demoResearch } from "./mock-data";
 import { providers } from "./providers";
 import { weightedCoverage } from "./scoring";
 import { addYearsIso, reverseDcfFromMarketCap, selectHorizonEstimate } from "./valuation";
-import { intrinsicValuation, valuationScenarios } from "./intrinsic-valuation";
+import { intrinsicValuation, valuationScenarios, consensusGrowth } from "./intrinsic-valuation";
+import { applyDeterministicFactors } from "./deterministic-factors";
 import { applyDeterministicValuation } from "./valuation-factor";
 import { peerGroup } from "./peer-valuation";
 import type { AnalystCall, Citation, DimensionCoverage, ResearchRun, ResearchScores } from "./types";
@@ -249,6 +250,11 @@ async function research(tickerRaw: string, focus?: string[], tier: "deep" | "lig
     const ai = await providers.ai.synthesize(evidence);
     run.investmentCase = applyDeterministicValuation(validateInvestmentCase(ai.investmentCase, citations.map(c => c.url), run.analyzedAt), intrinsic, {
       secUrl: fundamentals?.citations[0]?.url, asOf: (market.timestamp ?? run.analyzedAt).slice(0, 10), peerComparable: run.peerValuation?.status === "comparison available",
+    });
+    run.investmentCase = applyDeterministicFactors(run.investmentCase, {
+      asOf: (market.timestamp ?? run.analyzedAt).slice(0, 10), secUrl: fundamentals?.citations[0]?.url, annualEnd: fundamentals?.latestAnnualPeriodEnd,
+      fundamentals: fundamentals ?? undefined, consensusUrl: analystData?.citations[0]?.url,
+      consensusGrowth: consensusGrowth(fundamentals?.revenue, fundamentals?.latestAnnualPeriodEnd, analystData?.estimates ?? [])?.growth,
     });
     run.evidenceAssessment=assessDecisionEvidence(run);
     run.confidence=run.evidenceAssessment.score;
