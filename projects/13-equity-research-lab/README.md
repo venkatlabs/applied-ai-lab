@@ -98,7 +98,11 @@ npm test
 
 ## Deployment
 
-1. Create a Supabase project and run `supabase/migrations/001_init.sql`.
+1. Create a Supabase project and run the files in `supabase/migrations/` in numeric order.
+   Migration `001_init.sql` is a legacy prototype schema the app does not use; migration
+   `005_lock_legacy_001_tables.sql` enables RLS on its tables and revokes anon/authenticated
+   access, so apply 005 to every project where 001 was ever run. See also the v0.6 backend
+   setup below for 002.
 2. Add the environment variables to Vercel.
 3. Import this GitHub repo into Vercel and deploy.
 
