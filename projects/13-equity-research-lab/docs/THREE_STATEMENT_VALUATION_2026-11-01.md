@@ -21,7 +21,8 @@ Source concept: [Equity Research Guide](https://docs.google.com/document/d/1WZHt
 - Equity is assets minus liabilities, so the opening sheet balances by construction; a warning is raised when reported equity differs by more than 1%.
 - Every value carries its tag, filing date, form and accession number. Same-year reported ratios (margin, tax, depreciation, capex, interest, growth) are returned as reference only; forecast assumptions stay with the caller.
 - Banks and insurers are refused. Lease liabilities are not counted as debt unless tagged as debt (warned).
-- Not yet done: a thin fetch wrapper around `SecProvider.getCompanyFacts`, checks against real filings (sec.gov is not reachable from the build sandbox), and the guarded report tab.
+- `lib/server/model-inputs-loader.ts` (`loadModelInputs(ticker, source)`) fetches companyfacts through an injected source (`SecProvider` fits) and builds the inputs. It validates the ticker first and never throws: a failed SEC call returns an unavailable result with the reason, so a fetch failure cannot look like a debt-free company.
+- Not yet done: checks against real filings (sec.gov is not reachable from the build sandbox), a route, and the guarded report tab.
 
 ## Not yet implemented — do not claim live integration
 1. **Input assembly (loader done, see above; real-filing checks and the wrapper remain):** dated SEC filings and verified share/market data mapped to auditable model inputs. Opening otherAssets must include PP&E and be consistent with starting working capital. Never synthesize a balance sheet from incomplete FMP fields.
