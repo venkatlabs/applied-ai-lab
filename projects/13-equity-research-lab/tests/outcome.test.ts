@@ -42,6 +42,22 @@ describe("researchOutcome", () => {
     const o = researchOutcome(run(strong, { marketAsOf: "2026-08-01" }), now);
     expect(o.verdict).toBe("Hold"); expect(o.missing.join(" ")).toContain("recent price is needed before a buy view");
   });
+  it("never reads Medium or High confidence when valuation evidence is unknown", () => {
+    // Five other factors fully sourced and fresh, fresh price: still no valuation.
+    const noValuation = researchOutcome(run({ valuation: "Unknown" }), now);
+    expect(noValuation.confidence).toBe("Low");
+    expect(noValuation.confidencePoints).toBeLessThanOrEqual(49);
+    expect(noValuation.missing.join(" ")).toContain("evidence");
+    // The same report with valuation known keeps the higher confidence.
+    expect(researchOutcome(run({}), now).confidence).not.toBe("Low");
+  });
+  it("caps confidence at Low when fewer than four factors are sourced", () => {
+    const o = researchOutcome(run({ growth: "Strong", cash: "Strong", competition: "Unknown", execution: "Unknown", market: "Unknown", valuation: "Mixed" }), now);
+    expect(o.confidence).toBe("Low");
+    // Four sourced factors including valuation is enough to leave the cap.
+    const four = researchOutcome(run({ execution: "Unknown", market: "Unknown" }), now);
+    expect(four.confidencePoints).toBeGreaterThan(49);
+  });
   it("calls clearly negative evidence a trim or sell", () => {
     expect(researchOutcome(run(Object.fromEntries(factorKeys.map(k => [k, "Weak"]))), now).verdict).toBe("Trim");
     expect(researchOutcome(run(Object.fromEntries(factorKeys.map(k => [k, "Very weak"]))), now)).toMatchObject({ verdict: "Sell / Avoid", score: 10 });
