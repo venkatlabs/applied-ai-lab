@@ -14,8 +14,17 @@ Source concept: [Equity Research Guide](https://docs.google.com/document/d/1WZHt
 - Tests now include an independent hand calculation of the example (per share 20.06) and the new guards. 366 tests pass.
 - Capex above depreciation in perpetuity remains an assumption the caller must review.
 
+## SEC input loader (Claude, 2026-11-03)
+`lib/model-inputs.ts` (`buildModelInputs`) turns raw SEC companyfacts into the model's opening statements, USD millions.
+- One annual filing and one balance-sheet date: the newest 10-K/20-F/40-F balance sheet with total assets. An older date is never substituted, quarterly facts are ignored, and a sheet older than 18 months is refused.
+- All-or-nothing: total assets and liabilities, cash, PP&E, current assets and liabilities, annual revenue and diluted shares are required. Anything missing makes the result unavailable and names each gap. Debt must be reported or explicitly confirmed absent (`confirmNoDebt`).
+- Equity is assets minus liabilities, so the opening sheet balances by construction; a warning is raised when reported equity differs by more than 1%.
+- Every value carries its tag, filing date, form and accession number. Same-year reported ratios (margin, tax, depreciation, capex, interest, growth) are returned as reference only; forecast assumptions stay with the caller.
+- Banks and insurers are refused. Lease liabilities are not counted as debt unless tagged as debt (warned).
+- Not yet done: a thin fetch wrapper around `SecProvider.getCompanyFacts`, checks against real filings (sec.gov is not reachable from the build sandbox), and the guarded report tab.
+
 ## Not yet implemented — do not claim live integration
-1. **Input assembly:** dated SEC filings and verified share/market data mapped to auditable model inputs. Opening otherAssets must include PP&E and be consistent with starting working capital. Never synthesize a balance sheet from incomplete FMP fields.
+1. **Input assembly (loader done, see above; real-filing checks and the wrapper remain):** dated SEC filings and verified share/market data mapped to auditable model inputs. Opening otherAssets must include PP&E and be consistent with starting working capital. Never synthesize a balance sheet from incomplete FMP fields.
 2. **Financial sector model:** banks and insurers require sector-specific valuation; do not run this corporate DCF.
 3. **Valuation QA:** distinguish equity cash flow and FCFF, build terminal capex/working-capital normalization and SBC/dilution, debt schedule, interest tax shield and loss carryforwards before labeling underwriting-ready.
 4. **Portal UI:** stock report model tab with assumptions, annual three statements, DCF sensitivity, current evidence date, blockers and source links. Wire only verified inputs. Do not replace the existing research verdict or action vocabulary until tested.
