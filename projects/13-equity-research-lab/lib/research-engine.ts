@@ -1,4 +1,4 @@
-import { buildDistribution } from "./scenario-distribution";
+import { buildDistribution, marketChecks } from "./scenario-distribution";
 import { completionState } from './research-completion';
 import { researchGaps } from './server/web-research';
 import { validateCurrentAffairs } from "./current-affairs";
@@ -263,6 +263,13 @@ async function research(tickerRaw: string, focus?: string[], tier: "deep" | "lig
     run.score = decision.score ?? 0;
     run.verdict = !decision.available ? "Insufficient data" : decision.action === "Buy candidate" ? "Buy candidate" : decision.action === "Avoid / review selling" ? "Avoid for now" : "Watch";
     run.scenarioDistribution = buildDistribution(ai.scenarioDistribution, citations, run.analyzedAt);
+    {
+      const d = run.scenarioDistribution;
+      const eps = fundamentals?.annualDilutedEps;
+      const evSales = market.marketCap && fundamentals?.revenue ? (market.marketCap - (intrinsic.available ? intrinsic.netCash ?? 0 : 0)) / fundamentals.revenue : undefined;
+      const currentMultiple = d.basis === "Earnings per share × P/E" ? (eps && eps > 0 ? market.price / eps : undefined) : evSales;
+      d.gaps = [...d.gaps, ...marketChecks(d, { price: market.price, currentMultiple, dcfUpsidePct: intrinsic.available ? intrinsic.upsidePct : undefined })];
+    }
     run.executiveSummary = ai.executiveSummary;
     run.highlights = ai.highlights;
     run.risks = ai.risks;
