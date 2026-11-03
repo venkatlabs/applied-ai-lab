@@ -24,6 +24,7 @@ export function MyStocks() {
   const [following, setFollowing] = useState<string[]>([]);
   const [synced, setSynced] = useState(true);
   const [owned, setOwned] = useState<string[]>([]);
+  const [weights, setWeights] = useState<Record<string, number>>({});
   const [prices, setPrices] = useState<Record<string, { price: number; date: string }>>({});
   const [input, setInput] = useState('');
   const [message, setMessage] = useState('');
@@ -55,11 +56,12 @@ export function MyStocks() {
       const holdings = snapshot ? connectedHoldings(snapshot).holdings : readHoldings();
       const symbols = (holdings?.positions ?? []).filter(p => p.kind === 'stock' && p.shares > 0).map(p => p.symbol);
       setOwned(symbols);
+      setWeights(Object.fromEntries((holdings?.positions ?? []).filter(p => p.kind === 'stock' && p.shares > 0 && holdings!.totalValue > 0).map(p => [p.symbol, p.shares * p.price / holdings!.totalValue])));
       if (symbols.length) void saveFollowed(symbols, 'holding').then(ok => setSynced(s => s && ok));
-    } catch { setOwned([]); }
+    } catch { setOwned([]); setWeights({}); }
   }, [snapshot]);
 
-  const rows = useMemo(() => buildStockRows({ owned, following, runs, prices }), [owned, following, runs, prices]);
+  const rows = useMemo(() => buildStockRows({ owned, following, runs, prices, weights }), [owned, following, runs, prices, weights]);
   const sum = useMemo(() => summarize(rows), [rows]);
   const remaining = budget ? (budget.metered || !budget.reason ? budget.remaining : 0) : 0;
   const queue = useMemo(() => researchQueue(rows, remaining), [rows, remaining]);
@@ -115,7 +117,7 @@ function StockCard({ row, onRemove, flag }: { row: StockRow; onRemove: () => voi
       <p className="tags">{row.owned && <span className="tag">Owned</span>}{row.following && !row.owned && <span className="tag">Following</span>}{row.reportCount > 1 && <span className="tag">{row.reportCount} reports</span>}{flag && <Link href="/watch" className={`tag status-${flag}`}>{flag === 'tripped' ? 'Trigger tripped' : 'Trigger on watch'}</Link>}</p></div>
     <div className="stock-verdict"><strong className={`verdict-badge ${verdictClass(o.verdict)}`}>{o.verdict}</strong>
       {o.confidence && <span className="muted">{o.confidence} confidence · score {o.score}</span>}</div>
-    <div className="stock-why"><p>{o.verdict === 'Not researched' ? o.headline : row.owned ? o.ownedAction : o.notOwnedAction}</p>
+    <div className="stock-why"><p>{o.verdict === 'Not researched' ? o.headline : row.owned ? row.ownedAction : o.notOwnedAction}</p>
       {o.screen && <p className="muted">Quick screen (no AI): <strong>{o.screen.label}</strong>. {o.screen.signals.filter(x => x.score !== 0).map(x => x.label.toLowerCase() + (x.score > 0 ? ' +' : ' −')).join(', ')}</p>}
       <p className="muted">{o.analyzedAt ? `Researched ${ago(calendarDaysAgo(o.analyzedAt))}${o.needsRefresh ? ' · refresh recommended' : ''}` : 'Never researched'}
         {row.sinceCall && ` · since the call: ${row.sinceCall.movePct > 0 ? '+' : ''}${row.sinceCall.movePct}% in ${row.sinceCall.days} days ${row.sinceCall.right ? '✓' : '✗'}`}</p>

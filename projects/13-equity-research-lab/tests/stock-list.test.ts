@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildStockRows, researchQueue, sinceCall, summarize } from "../lib/stock-list";
+import { buildStockRows, concentrationAction, researchQueue, sinceCall, summarize } from "../lib/stock-list";
 import { researchOutcome } from "../lib/outcome";
 import { factorKeys } from "../lib/investment";
 import type { ResearchRun } from "../lib/types";
@@ -107,4 +107,39 @@ describe("hurdle view", () => {
 it("sector names cover AI-cloud holdings that the peer groups do not", async () => {
   const { sectorFor } = await import("../lib/diversification");
   expect(sectorFor("NBIS")).toBe("AI cloud infrastructure"); expect(sectorFor("AMZN")).toBe("Digital platforms"); expect(sectorFor("ZZZZ")).toBe("Unknown");
+});
+
+describe("concentration and the owned-position text", () => {
+  const rows = (weights: Record<string, number>, rating = "Mixed") => buildStockRows({ owned: ["AMZ", "SML"], following: [], now, weights, runs: [run("AMZ", rating), run("SML", rating)] });
+  it("replaces a generic keep with the concentration message, whatever the verdict", () => {
+    for (const rating of ["Mixed", "Strong", "Very strong", "Weak"]) {
+      const amz = rows({ AMZ: 0.64, SML: 0.04 }, rating).find(r => r.symbol === "AMZ")!;
+      expect(amz.ownedAction).toContain("64% of your portfolio");
+      expect(amz.ownedAction).toContain("more than twice your 10% single-stock limit");
+      expect(amz.ownedAction).not.toMatch(/^Keep/);
+      expect(amz.ownedAction).toContain(amz.outcome.verdict.toLowerCase());
+    }
+  });
+  it("uses the outcome's own text when the position is within the limit or the weight is unknown", () => {
+    const r = rows({ AMZ: 0.64, SML: 0.04 });
+    const sml = r.find(x => x.symbol === "SML")!;
+    expect(sml.ownedAction).toBe(sml.outcome.ownedAction);
+    const unknown = rows({}).find(x => x.symbol === "AMZ")!;
+    expect(unknown.ownedAction).toBe(unknown.outcome.ownedAction);
+  });
+  it("uses the softer wording between one and two times the limit", () => {
+    const o = researchOutcome(run("AMZ", "Mixed"), now);
+    expect(concentrationAction(0.15, o)).toContain("above your 10% single-stock limit. Do not add; consider reducing");
+    expect(concentrationAction(0.10, o)).toBe(o.ownedAction);
+  });
+  it("puts a position over twice the limit at the top, ahead of stocks that merely need a refresh", () => {
+    const r = rows({ AMZ: 0.64, SML: 0.04 }, "Strong");
+    expect(r[0].symbol).toBe("AMZ");
+    expect(r[0].priority).toBe(1);
+  });
+  it("ignores weights for stocks you only follow", () => {
+    const r = buildStockRows({ owned: [], following: ["AMZ"], now, weights: { AMZ: 0.64 }, runs: [run("AMZ", "Strong")] });
+    expect(r[0].weight).toBeUndefined();
+    expect(r[0].ownedAction).toBe(r[0].outcome.ownedAction);
+  });
 });

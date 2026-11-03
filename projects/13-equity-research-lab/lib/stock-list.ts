@@ -1,6 +1,7 @@
 import type { ResearchRun } from "./types";
 import { researchOutcome, latestByTicker, isRated, type Outcome } from "./outcome";
 import { hurdleView, type HurdleView } from "./hurdle";
+import { DEFAULT_LIMITS } from "./diversification";
 
 /** Pure model behind the "My stocks" home: one row per stock you own, follow or have researched. */
 export type StockRow = {
@@ -8,6 +9,10 @@ export type StockRow = {
   outcome: Outcome; report?: ResearchRun; reportCount: number;
   sinceCall: { movePct: number; days: number; right: boolean | null } | null;
   hurdle: HurdleView | null;
+  /** Share of your portfolio (0 to 1) when known; only a percentage is ever shown. */
+  weight?: number;
+  /** What to do with an owned position. Concentration overrides a generic "keep" so the card cannot contradict the brief. */
+  ownedAction: string;
   priority: number; action: "Research" | "Refresh" | "Open";
 };
 export type Price = { price: number; date: string };
@@ -25,7 +30,18 @@ export function sinceCall(run: ResearchRun | undefined, outcome: Outcome, latest
   return { movePct, days, right };
 }
 
-function priority(owned: boolean, following: boolean, o: Outcome): number {
+/** Over the single-stock limit, whatever the verdict says. Matches the morning brief and the holdings advice. */
+export function concentrationAction(weight: number | undefined, o: Outcome, limit: number = DEFAULT_LIMITS.singleStock): string {
+  if (weight == null || !(weight > limit)) return o.ownedAction;
+  const pct = `${Math.round(weight * 100)}%`, lim = `${Math.round(limit * 100)}%`;
+  const verdict = o.verdict === "Not researched" ? "" : ` The research verdict is ${o.verdict.toLowerCase()}${o.confidence ? ` with ${o.confidence.toLowerCase()} confidence` : ""}; that is a view on the company, not on your concentration.`;
+  return weight > 2 * limit
+    ? `This is ${pct} of your portfolio, more than twice your ${lim} single-stock limit. Do not add; reducing toward the limit matters more than the verdict.${verdict}`
+    : `This is ${pct} of your portfolio, above your ${lim} single-stock limit. Do not add; consider reducing toward the limit.${verdict}`;
+}
+
+function priority(owned: boolean, following: boolean, o: Outcome, weight?: number): number {
+  if (owned && weight != null && weight > 2 * DEFAULT_LIMITS.singleStock) return 1;
   if (o.verdict === "Not researched") {
     if (o.screen?.label === "Skip for now" && owned) return 1;
     if (o.screen?.label === "Worth a deep look") return owned ? 2 : 3;
@@ -37,7 +53,7 @@ function priority(owned: boolean, following: boolean, o: Outcome): number {
   return owned ? 4 : 6;
 }
 
-export function buildStockRows(input: { owned: string[]; following: string[]; runs: ResearchRun[]; prices?: Record<string, Price>; now?: Date }): StockRow[] {
+export function buildStockRows(input: { owned: string[]; following: string[]; runs: ResearchRun[]; prices?: Record<string, Price>; weights?: Record<string, number>; now?: Date }): StockRow[] {
   const now = input.now ?? new Date();
   const latest = latestByTicker(input.runs);
   const counts = new Map<string, number>();
@@ -49,9 +65,10 @@ export function buildStockRows(input: { owned: string[]; following: string[]; ru
   const rows = [...symbols].map((symbol): StockRow => {
     const report = latest.get(symbol), outcome = researchOutcome(report, now);
     const isOwned = owned.has(symbol), isFollowing = following.has(symbol);
+    const weight = isOwned ? input.weights?.[symbol] : undefined;
     return {
       symbol, companyName: report?.companyName ?? symbol, owned: isOwned, following: isFollowing, outcome, report, reportCount: counts.get(symbol) ?? 0,
-      sinceCall: sinceCall(report, outcome, input.prices?.[symbol]), hurdle: hurdleView(report, input.prices?.[symbol]), priority: priority(isOwned, isFollowing, outcome),
+      sinceCall: sinceCall(report, outcome, input.prices?.[symbol]), hurdle: hurdleView(report, input.prices?.[symbol]), weight, ownedAction: concentrationAction(weight, outcome), priority: priority(isOwned, isFollowing, outcome, weight),
       action: !report || outcome.verdict === "Not researched" ? "Research" : outcome.needsRefresh ? "Refresh" : "Open",
     };
   });
