@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Citation } from './types';
 import { validDate } from './thesis-review';
-import { scenarioLabels } from './scenario-math';
+import { scenarioLabels, distributionSummary } from './scenario-math';
 export { scenarioLabels } from './scenario-math';
 const fields = ['drivers', 'assumptions', 'startingEvidence', 'evidenceDate'];
 const row = z.object({ label: z.enum(scenarioLabels), weight: z.number().finite().min(0).max(100),
@@ -45,3 +45,27 @@ export function buildDistribution(input: unknown, citations: Citation[], analyze
   return {targetDate:empty.targetDate,basis:p.basis,weightReason:p.weightReason,gaps:p.gaps,cases};
 }
 export { distributionSummary } from "./scenario-math";
+
+/** How far a case may assume the market multiple moves before the report says so. */
+export const MULTIPLE_LIMITS = { base: 1.5, other: 2.5, dcfGapPoints: 40 };
+/**
+ * Compares the model-supplied five-case assumptions with today's multiple and the deterministic DCF.
+ * It never changes the model's numbers; it returns plain-language warnings for `gaps` so a reader
+ * sees when the weighted return rests on a re-rating or disagrees sharply with the DCF.
+ */
+export function marketChecks(d: Distribution, ctx: { price: number; currentMultiple?: number; dcfUpsidePct?: number }): string[] {
+  const out: string[] = [];
+  if (d.cases.length !== 5) return out;
+  const unit = d.basis === 'Earnings per share × P/E' ? 'P/E' : 'EV/sales';
+  const cur = ctx.currentMultiple;
+  if (cur != null && Number.isFinite(cur) && cur > 0) {
+    for (const c of d.cases) {
+      const limit = c.label === 'Base' ? MULTIPLE_LIMITS.base : MULTIPLE_LIMITS.other;
+      if (c.multiple > cur * limit) out.push(`${c.label} case assumes a ${unit} of ${c.multiple.toFixed(1)}, ${(c.multiple / cur).toFixed(1)}× today's ${cur.toFixed(1)}; its price rests on a re-rating, not on earnings growth alone.`);
+    }
+  } else out.push(`Today's ${unit} could not be computed, so the case multiples are not checked against the current market multiple.`);
+  const s = distributionSummary(d.cases, ctx.price);
+  if (s && ctx.dcfUpsidePct != null && Number.isFinite(ctx.dcfUpsidePct) && s.returnPct - ctx.dcfUpsidePct > MULTIPLE_LIMITS.dcfGapPoints)
+    out.push(`The weighted five-case return (${s.returnPct.toFixed(0)}%) is ${(s.returnPct - ctx.dcfUpsidePct).toFixed(0)} points above the deterministic DCF upside (${ctx.dcfUpsidePct.toFixed(0)}%). Treat the five-case view as an optimistic assumption set, not a second valuation.`);
+  return out;
+}
