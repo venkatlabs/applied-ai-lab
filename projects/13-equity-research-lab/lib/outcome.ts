@@ -117,7 +117,10 @@ export function researchOutcome(run: ResearchRun | undefined | null, now = new D
     const age = (analyzed - Date.parse(f.evidenceDate)) / dayMs;
     return Number.isFinite(age) && age >= 0 && age <= (k === "market" || k === "valuation" ? 120 : 460) ? 1 : 0;
   };
-  const confidencePoints = Math.round(100 * (.4 * known.length / factorKeys.length + .25 * factorKeys.reduce((n, k) => n + fresh(k), 0) / factorKeys.length + .2 * (priceFresh ? 1 : 0) + .15 * (valuationKnown ? 1 : 0)));
+  const rawConfidence = Math.round(100 * (.4 * known.length / factorKeys.length + .25 * factorKeys.reduce((n, k) => n + fresh(k), 0) / factorKeys.length + .2 * (priceFresh ? 1 : 0) + .15 * (valuationKnown ? 1 : 0)));
+  // Without valuation evidence nothing says whether the price is fair, and with fewer than four
+  // sourced factors the view rests on too little: neither can read as Medium or High confidence.
+  const confidencePoints = !valuationKnown || known.length < 4 ? Math.min(rawConfidence, 49) : rawConfidence;
   const confidence: Confidence = confidencePoints >= 75 ? "High" : confidencePoints >= 50 ? "Medium" : "Low";
 
   const impact = factorKeys.filter(k => thesis.factors[k].rating !== "Unknown").map(k => ({ k, d: factorWeights[k] * (factorPoints[thesis.factors[k].rating] - 50) }));
