@@ -46,4 +46,34 @@ describe("three-statement research model",()=>{
     if (!m.available) throw new Error(m.errors.join(", "));
     expect(m.equityValue).toBeCloseTo(m.enterpriseValue+example.starting.cash-example.starting.debt,8);
   });
+  it("matches an independent hand calculation of the example",()=>{
+    const m=buildThreeStatementModel(example);
+    if (!m.available) throw new Error(m.errors.join(", "));
+    // Revenue 1100/1210/1331; FCFF = 0.15*rev + 0.05*rev - 0.07*rev - change in NWC (10% of revenue growth).
+    expect(m.years.map(y=>y.freeCashFlowToFirm)).toEqual([
+      expect.closeTo(133,6),expect.closeTo(146.3,6),expect.closeTo(160.93,6)]);
+    // Terminal year: revenue 1331*1.025, NWC reinvested at 2.5% growth, not the final year's 10%.
+    expect(m.terminalFreeCashFlow).toBeCloseTo(174.02825,5);
+    expect(m.terminalValue).toBeCloseTo(174.02825/0.075,4);
+    expect(m.enterpriseValue).toBeCloseTo(2106.0606,3);
+    expect(m.perShareValue).toBeCloseTo(20.0606,3);
+  });
+  it("does not carry the final year's working-capital build into the terminal value",()=>{
+    const slow=buildThreeStatementModel({...example,revenueGrowth:[0.025,0.025,0.025],operatingMargin:[0.2,0.2,0.2]});
+    const fast=buildThreeStatementModel(example);
+    if (!slow.available||!fast.available) throw new Error("expected both to be available");
+    const steady=slow.years[2].freeCashFlowToFirm*1.025;
+    expect(slow.terminalFreeCashFlow).toBeCloseTo(steady,6);
+    expect(fast.terminalFreeCashFlow).toBeGreaterThan(fast.years[2].freeCashFlowToFirm*1.025);
+  });
+  it("rejects opening PP&E plus working capital larger than other assets",()=>{
+    const m=buildThreeStatementModel({...example,starting:{...example.starting,netWorkingCapital:500}});
+    expect(m.available).toBe(false);
+    if (!m.available) expect(m.errors.join(" ")).toMatch(/PP&E plus net working capital/);
+  });
+  it("withholds a value when a working-capital liability drives other assets negative",()=>{
+    const m=buildThreeStatementModel({...example,
+      revenueGrowth:[0,0,0],operatingMargin:[0.2,0.2,0.2],netWorkingCapitalPctRevenue:-1});
+    expect(m.available).toBe(false);
+  });
 });

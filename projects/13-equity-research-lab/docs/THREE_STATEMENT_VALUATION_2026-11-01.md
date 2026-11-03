@@ -8,6 +8,12 @@ Source concept: [Equity Research Guide](https://docs.google.com/document/d/1WZHt
 - Invalid or missing core inputs are rejected. No provider call, new expense, account access, tax processing or trading.
 - `tests/three-statement-model.test.ts` covers reconciliation, no-double-count bridge, deterministic outputs and error cases.
 
+## Review changes (Claude, 2026-11-03)
+- Terminal cash flow is rebuilt for the first year after the forecast (revenue at the terminal rate, final-year margin/depreciation/capex ratios, working capital reinvested at the terminal rate) instead of growing the final year's FCFF. Exposed as `terminalFreeCashFlow`.
+- Rejects openings where PP&E plus net working capital exceeds otherAssets, and forecasts where projected otherAssets go negative.
+- Tests now include an independent hand calculation of the example (per share 20.06) and the new guards. 366 tests pass.
+- Capex above depreciation in perpetuity remains an assumption the caller must review.
+
 ## Not yet implemented — do not claim live integration
 1. **Input assembly:** dated SEC filings and verified share/market data mapped to auditable model inputs. Opening otherAssets must include PP&E and be consistent with starting working capital. Never synthesize a balance sheet from incomplete FMP fields.
 2. **Financial sector model:** banks and insurers require sector-specific valuation; do not run this corporate DCF.

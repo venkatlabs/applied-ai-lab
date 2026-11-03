@@ -43,7 +43,7 @@ export type ModelYear = {
 };
 export type ModelResult =
   | { available: false; errors: string[] }
-  | { available: true; years: ModelYear[]; terminalValue: number;
+  | { available: true; years: ModelYear[]; terminalFreeCashFlow: number; terminalValue: number;
       enterpriseValue: number; equityValue: number; perShareValue: number;
       assumptions: ModelAssumptions; warnings: string[] };
 
@@ -60,6 +60,8 @@ export function buildThreeStatementModel(a: ModelAssumptions): ModelResult {
       ![s.cash,s.otherAssets,s.debt,s.otherLiabilities,s.propertyPlantEquipment].every(x=>x>=0))
     errors.push("Opening year, revenue, cash, assets, liabilities and debt must be valid.");
   if (s.propertyPlantEquipment > s.otherAssets) errors.push("PP&E cannot exceed otherAssets (which includes PP&E).");
+  if (s.propertyPlantEquipment + s.netWorkingCapital > s.otherAssets + 1e-9)
+    errors.push("Opening PP&E plus net working capital cannot exceed otherAssets.");
   if (!near(s.cash + s.otherAssets, s.debt + s.otherLiabilities + s.equity))
     errors.push("Opening assets must equal liabilities plus equity.");
   const n = a.revenueGrowth?.length ?? 0;
@@ -106,21 +108,27 @@ export function buildThreeStatementModel(a: ModelAssumptions): ModelResult {
     pv+=freeCashFlowToFirm/Math.pow(1+a.discountRate,i+1);
     revenue=nextRevenue; nwc=targetNwc;
   }
-  // Terminal FCFF is intentionally tied to the final projected FCFF; an
-  // explicit normalization step is needed when the final year is unrepresentative.
-  const finalFcf=years[n-1].freeCashFlowToFirm;
-  const terminalValue=finalFcf*(1+a.terminalGrowth)/(a.discountRate-a.terminalGrowth);
+  // Terminal cash flow is rebuilt for the first year after the forecast: revenue grows at the
+  // terminal rate, margin, depreciation and capex ratios stay at their final-year values, and
+  // working capital is reinvested at the terminal rate, not at the final year's growth rate.
+  const last=years[n-1];
+  const terminalRevenue=last.revenue*(1+a.terminalGrowth);
+  const terminalFcf=terminalRevenue*a.operatingMargin[n-1]*(1-a.taxRate)
+    +terminalRevenue*a.depreciationPctRevenue-terminalRevenue*a.capexPctRevenue
+    -a.netWorkingCapitalPctRevenue*(terminalRevenue-last.revenue);
+  const terminalValue=terminalFcf/(a.discountRate-a.terminalGrowth);
   const enterpriseValue=pv+terminalValue/Math.pow(1+a.discountRate,n);
   const equityValue=enterpriseValue+s.cash-s.debt;
   const warnings:string[]=[
     "Illustrative constant-debt forecast; no dividends, share issuance, buybacks or acquisitions.",
     "Opening cash and debt are applied once in enterprise-to-equity bridge; future net financing is zero.",
-    "No NOL carryforwards, deferred taxes, SBC dilution or terminal reinvestment normalization.",
+    "Terminal cash flow keeps final-year margin, depreciation and capex ratios and reinvests working capital at the terminal growth rate; capex above depreciation in perpetuity is an assumption to review.",
+    "No NOL carryforwards, deferred taxes or SBC dilution.",
     "Any negative cash, PP&E, or forecast balance-sheet imbalance requires manual review."
   ];
-  if (years.some(y=>y.endingCash<0||y.endingPpe<0||!near(y.balanceSheetDifference,0)))
-    return { available:false, errors:["Projected cash/PP&E or balance-sheet reconciliation failed; revise assumptions."] };
-  if (!(finalFcf>0) || !valid(enterpriseValue) || !valid(equityValue) || equityValue<=0)
+  if (years.some(y=>y.endingCash<0||y.endingPpe<0||y.otherAssets<0||!near(y.balanceSheetDifference,0)))
+    return { available:false, errors:["Projected cash, PP&E or other assets went negative, or the balance sheet did not reconcile; revise assumptions."] };
+  if (!(terminalFcf>0) || !valid(enterpriseValue) || !valid(equityValue) || equityValue<=0)
     return { available:false, errors:["Positive, finite terminal free cash flow and equity value are required."] };
-  return {available:true,years,terminalValue,enterpriseValue,equityValue,perShareValue:equityValue/a.sharesOutstanding,assumptions:a,warnings};
+  return {available:true,years,terminalFreeCashFlow:terminalFcf,terminalValue,enterpriseValue,equityValue,perShareValue:equityValue/a.sharesOutstanding,assumptions:a,warnings};
 }
