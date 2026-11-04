@@ -12,6 +12,7 @@ export type RecommendedActionLabel =
   | "TRIM CANDIDATE"
   | "SELL / EXIT REVIEW"
   | "RESEARCH FIRST"
+  | "REFRESH PORTFOLIO FIRST"
   | "REVIEW FUND EXPOSURE"
   | "WAIT / WATCH"
   | "AVOID / DO NOT INITIATE";
@@ -51,11 +52,32 @@ export function portfolioActionPlan(
   now = new Date(),
 ): PortfolioActionPlan {
   const blockers: string[] = [];
+  const holdingsFresh = holdingsSnapshotIsFresh(holdings, now);
+  if (!holdingsFresh) {
+    blockers.push("Portfolio snapshot is older than seven days or has an invalid/future as-of date. Refresh holdings before using directional actions or sizing.");
+  }
   if (holdings.coverage === "partial") {
     blockers.push("Portfolio coverage is partial; recommendations may change when missing accounts or positions are included.");
   }
   if (holdings.positions.some(p => p.kind === "fund")) {
     blockers.push("Fund and ETF look-through is not yet modeled, so underlying stock and sector overlap can be understated.");
+  }
+
+  if (!holdingsFresh) {
+    const actions = holdings.positions
+      .filter(position => position.shares > 0 && position.price > 0)
+      .map(position => ({
+        symbol: position.symbol,
+        label: "REFRESH PORTFOLIO FIRST" as const,
+        priority: "Research first" as const,
+        valueUsd: position.shares * position.price,
+        weight: holdings.totalValue > 0 ? (position.shares * position.price) / holdings.totalValue : 0,
+        evidence: "portfolio rules" as const,
+        reasons: ["The recorded holdings/price snapshot is stale, so buy/hold/trim/sell sizing is intentionally withheld until the portfolio is refreshed."],
+        blockers: ["Refresh the portfolio snapshot, then rerun the decision queue."],
+      }))
+      .sort((a, b) => b.weight - a.weight || a.symbol.localeCompare(b.symbol));
+    return { actions, blockers };
   }
 
   const positions = new Map(holdings.positions.map(p => [p.symbol, p]));
@@ -125,6 +147,17 @@ export function stockActionSummary(
   if (decision.confidence !== "High" && decision.confidence !== "Medium") blockers.push(...decision.missing);
 
   if (holdings) {
+    if (!holdingsSnapshotIsFresh(holdings, now)) {
+      blockers.push("Portfolio snapshot is older than seven days or has an invalid/future as-of date. Refresh holdings before using portfolio-aware directional actions or sizing.");
+      if (!decision.available) blockers.push(...decision.missing);
+      return {
+        symbol: run.ticker,
+        label: "REFRESH PORTFOLIO FIRST",
+        reasons: ["Company research is available separately, but the portfolio snapshot is stale. Refresh the account/holdings data before deciding how much to buy, hold, trim or sell."],
+        blockers: [...new Set(blockers)],
+        ...(whatChanges ? { whatChanges } : {}),
+      };
+    }
     if (holdings.coverage === "partial") blockers.push("Portfolio coverage is partial.");
     const owned = holdings.positions.find(p => p.symbol === run.ticker && p.shares > 0);
     if (owned) {
@@ -206,4 +239,13 @@ function newPositionLabel(verdict: Outcome["verdict"]): RecommendedActionLabel {
 const rank: Record<ActionPriority, number> = { "Review now": 0, Opportunity: 1, "Research first": 2, Monitor: 3 };
 function compareActions(a: RecommendedAction, b: RecommendedAction) {
   return rank[a.priority] - rank[b.priority] || b.weight - a.weight || a.symbol.localeCompare(b.symbol);
+}
+
+function holdingsSnapshotIsFresh(holdings: Holdings, now: Date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(holdings.asOf)) return false;
+  const snapshotDay = Date.parse(`${holdings.asOf}T00:00:00Z`);
+  const today = Date.parse(`${now.toISOString().slice(0, 10)}T00:00:00Z`);
+  if (!Number.isFinite(snapshotDay) || !Number.isFinite(today)) return false;
+  const ageDays = (today - snapshotDay) / 86400000;
+  return ageDays >= 0 && ageDays <= 7;
 }
