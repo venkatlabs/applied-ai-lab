@@ -1,36 +1,47 @@
-# Amazon deconcentration plan — recommended default (2026-11-03)
+# Amazon deconcentration — conditional research alternatives (2026-11-03)
 
-Research output, not tax or investment advice. Percentages only; no dollar figures or account details are stored here. Review with a tax adviser before acting.
+Research output only. It is not tax or investment advice, it does not recommend or instruct any trade, and the app places no orders. Percentages only; no dollar figures or account details are stored here. Every alternative below is conditional on facts that are **not yet verified** (see "Unverified assumptions") and is meant as input for a tax adviser and for Venkat's own decisions.
 
-## Why
-Amazon is about 64% of the portfolio against a 10% single-stock planning limit (6.4×). Pay, vesting and retirement savings already depend on the same company, so the risk is larger than the stock's price risk. The plan does not depend on a view of the stock; it works whether the verdict is hold or trim.
+## Why this matters
+Amazon was reported at about 64% of the portfolio (as of 2026-10-26; not re-verified, do not treat as current) against a 10% single-stock planning limit, about 6.4 times the limit. Pay, vesting and retirement savings may depend on the same company, which would make the risk larger than the stock's price risk. The comparison below does not depend on a view of the stock.
 
-## Recommended default
-1. **Stop adding.** No new purchases of Amazon, and send new money elsewhere.
-2. **Low or no tax first (about 9 points of the portfolio).** Move Amazon held in the 401(k) and HSA into diversified funds (no tax on the switch). Sell vesting RSUs at vest, where the gain is small.
-3. **Use the losses.** Taxable positions below cost (NBIS, Rocket Lab, Amprius, AMD, Broadcom and similar) can offset gains. Avoid repurchasing the same stock within 30 days (wash sale).
-4. **Staged taxable sales.** The main block has a low cost basis, so about two thirds of each sale is gain. Size each year's sales to a tax budget agreed with an adviser, not to a price view.
-5. **Ask about a 10b5-1 plan.** Employees are usually limited to open trading windows; a plan schedules sales in advance.
-6. **Consider gifting appreciated shares** if you give to charity.
+## Alternatives to evaluate with an adviser
+Each item says what it would do, when it could apply, and what must be confirmed first. None is a default.
 
-## Path (flat-market illustration, not a forecast)
-| Point | Amazon share of portfolio |
+1. **Pause new Amazon purchases.** If the goal is to stop concentration growing, new money could be directed to other holdings. Condition: Venkat's goal and cash-flow plans.
+2. **Low- or no-tax-cost shifts.** If Amazon is held inside a 401(k) or HSA, switching to diversified funds inside the account is generally not a taxable event; vesting RSUs sold near vest typically carry a small gain. Condition: confirm which accounts hold Amazon, plan rules, and RSU treatment.
+3. **Offsetting losses.** If taxable positions sit below cost (the earlier draft named several), realized losses could offset gains. Condition: confirm lot-level basis; wash-sale rules (30 days, across all accounts) may apply to repurchases.
+4. **Staged taxable reduction.** If the main block has a low basis, a large share of each sale would be gain, so the pace is a trade-off between concentration risk and tax per year. Condition: Venkat's target weight, horizon and annual tax budget, plus adviser-reviewed tax assumptions.
+5. **Pre-scheduled selling arrangements (e.g. a Rule 10b5-1 plan).** If the employer limits trading to open windows, an adviser or counsel could explain whether such a plan is available. Condition: employer policy and blackout rules.
+6. **Gifting appreciated shares.** If charitable giving is already planned, an adviser could explain gifting appreciated shares. Condition: giving intentions and tax situation.
+
+## Illustrative path (flat-market arithmetic, not a forecast or a recommendation)
+The figures show what weights would result if a given pace were chosen. They are an example of the trade-off, not a target.
+
+| Point | Amazon share of portfolio (illustrative) |
 |---|---|
-| Today | about 64% |
-| After the low-tax moves | about 55% |
-| After year 1 | about 46% |
+| Starting weight (unverified) | about 64% |
+| After low-tax shifts, if applicable | about 55% |
+| After year 1 of staged reduction, if chosen | about 46% |
 | After year 2 | about 38% |
 | After year 3 | about 29% |
-| Year 4 to 5 | under 25%, then toward 10% to 15% |
+| Years 4 to 5 | under 25%, then toward 10% to 15% |
 
-A 10% target is a planning limit, not a requirement; an interim comfort level of about 25% is a reasonable stopping point to reassess.
+A 10% weight is a planning limit, not a requirement; about 25% is one possible interim point at which to reassess.
 
 ## Decisions that remain Venkat's
-- Target weight and timeline (the table assumes a flat-market path).
+- Target weight and timeline.
 - Annual tax budget.
-- Whether to use gifting or a 10b5-1 plan.
+- Whether to explore gifting or a pre-scheduled selling arrangement at all.
 
-## Not verified
-Washington capital-gains thresholds and rates, federal rates, lot-level basis and wash-sale interactions across accounts must be confirmed with an adviser. Amazon's next earnings (Oct 29) have passed; do not time the plan around the next report.
+## Unverified assumptions
+- Current Amazon weight and holdings by account (the 64% is a 2026-10-26 figure).
+- Lot-level cost basis and holding periods; wash-sale interactions across accounts.
+- Washington capital-gains thresholds and rates, and federal rates.
+- Employer trading windows, blackout rules and 10b5-1 availability.
+- Other realized gains or losses this tax year, income bracket, state tax assumptions.
+- Tax adviser review: not yet done. This remains a separate gate before any decision is acted on.
 
-The My stocks card and the morning brief already flag the concentration (PR #53), so the app and this plan say the same thing.
+Amazon's next earnings timing should not drive the plan.
+
+The My stocks card and the morning brief already flag the concentration (PR #53), so the app and this document describe the same situation.
